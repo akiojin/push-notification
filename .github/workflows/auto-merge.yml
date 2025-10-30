@@ -1,0 +1,114 @@
+name: Auto Merge
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  auto-merge:
+    name: Auto Merge PR
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request'
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get PR number
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --head "${{ github.event.workflow_run.head_branch }}" \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "No PR found for branch ${{ github.event.workflow_run.head_branch }}"
+            exit 0
+          fi
+
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "Found PR #$PR_NUMBER"
+
+      - name: Check PR status
+        id: check
+        if: steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+
+          PR_DATA=$(gh pr view "$PR_NUMBER" \
+            --json id,mergeable,mergeStateStatus,isDraft)
+
+          MERGEABLE=$(echo "$PR_DATA" | jq -r '.mergeable')
+          MERGE_STATE=$(echo "$PR_DATA" | jq -r '.mergeStateStatus')
+          IS_DRAFT=$(echo "$PR_DATA" | jq -r '.isDraft')
+          PR_ID=$(echo "$PR_DATA" | jq -r '.id')
+
+          echo "Mergeable: $MERGEABLE"
+          echo "Merge State: $MERGE_STATE"
+          echo "Is Draft: $IS_DRAFT"
+
+          # Check if PR is ready to merge
+          if [ "$IS_DRAFT" = "true" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=PR is a draft" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if [ "$MERGEABLE" != "MERGEABLE" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=PR is not mergeable (status: $MERGEABLE)" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if [ "$MERGE_STATE" != "CLEAN" ] && [ "$MERGE_STATE" != "UNSTABLE" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=Merge state is $MERGE_STATE" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "skip=false" >> $GITHUB_OUTPUT
+          echo "pr_id=$PR_ID" >> $GITHUB_OUTPUT
+
+      - name: Merge PR
+        if: steps.check.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_ID="${{ steps.check.outputs.pr_id }}"
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+
+          echo "Merging PR #$PR_NUMBER..."
+
+          gh api graphql -f query='
+            mutation($pr: ID!) {
+              mergePullRequest(input: {
+                pullRequestId: $pr,
+                mergeMethod: MERGE
+              }) {
+                pullRequest {
+                  number
+                  merged
+                }
+              }
+            }
+          ' -f pr="$PR_ID"
+
+          echo "PR #$PR_NUMBER has been merged successfully!"
+
+      - name: Skip merge
+        if: steps.check.outputs.skip == 'true'
+        run: |
+          echo "Auto-merge skipped: ${{ steps.check.outputs.reason }}"
