@@ -1,0 +1,326 @@
+openapi: 3.0.0
+info:
+  title: Push Notification REST API - Android SDK Integration
+  version: 1.0.0
+  description: |
+    Android Push Notification SDKがバックエンドREST APIと連携するための仕様。
+
+    機能ID: SPEC-628d6000
+    上流依存: SPEC-2d193ce6（Push通知REST API）
+
+    このファイルはAndroid SDKが使用するエンドポイントとペイロード形式を定義します。
+
+servers:
+  - url: https://api.example.com
+    description: Production server
+  - url: https://staging-api.example.com
+    description: Staging server
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /api/tokens:
+    post:
+      summary: デバイストークン登録
+      description: |
+        FCMデバイストークンをサーバーに登録します。
+        Android SDKは初期化時およびトークン更新時に自動的に呼び出します。
+      operationId: registerToken
+      tags:
+        - Token Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceTokenRequest'
+            examples:
+              basic:
+                summary: 基本的な登録
+                value:
+                  token: "fG4H8kJ2mL9nP3qR5sT7vW0xY2zA4bC6dE8fG0hI2jK4lM6"
+                  platform: "android"
+              withPlayer:
+                summary: プレイヤーアカウントID付き
+                value:
+                  token: "fG4H8kJ2mL9nP3qR5sT7vW0xY2zA4bC6dE8fG0hI2jK4lM6"
+                  platform: "android"
+                  playerAccountId: "player-12345"
+      responses:
+        '201':
+          description: トークン登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRegistrationResponse'
+        '400':
+          description: 不正なリクエスト
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: API認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tokens/{token}:
+    put:
+      summary: デバイストークン更新
+      description: |
+        プレイヤーアカウントIDを既存トークンに紐付けます。
+        ユーザーログイン時にAndroid SDKが呼び出します。
+      operationId: updateToken
+      tags:
+        - Token Management
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: FCMデバイストークン
+          schema:
+            type: string
+          example: "fG4H8kJ2mL9nP3qR5sT7vW0xY2zA4bC6dE8fG0hI2jK4lM6"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenUpdateRequest'
+            example:
+              playerAccountId: "player-12345"
+      responses:
+        '200':
+          description: トークン更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenUpdateResponse'
+        '404':
+          description: トークンが見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: API認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: デバイストークン削除
+      description: |
+        デバイストークンを無効化します。
+        ユーザーログアウト時やPush通知オプトアウト時にAndroid SDKが呼び出します。
+      operationId: deleteToken
+      tags:
+        - Token Management
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: FCMデバイストークン
+          schema:
+            type: string
+          example: "fG4H8kJ2mL9nP3qR5sT7vW0xY2zA4bC6dE8fG0hI2jK4lM6"
+      responses:
+        '204':
+          description: トークン削除成功（レスポンスボディなし）
+        '404':
+          description: トークンが見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: API認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/notifications/{id}:
+    get:
+      summary: 通知配信ステータス取得
+      description: |
+        特定の通知の配信ステータスを取得します。
+        Android SDKは通知受信後、配信確認のために呼び出すことができます（オプション）。
+      operationId: getNotificationStatus
+      tags:
+        - Notification Status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 通知ID
+          schema:
+            type: string
+          example: "notification-abc123"
+      responses:
+        '200':
+          description: 通知ステータス取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationStatusResponse'
+        '404':
+          description: 通知が見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: API認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API認証キー。Android SDKのSDKConfig.apiKeyに設定された値が使用されます。
+
+  schemas:
+    DeviceTokenRequest:
+      type: object
+      required:
+        - token
+        - platform
+      properties:
+        token:
+          type: string
+          description: FCMデバイストークン
+          example: "fG4H8kJ2mL9nP3qR5sT7vW0xY2zA4bC6dE8fG0hI2jK4lM6"
+        platform:
+          type: string
+          enum: [android]
+          description: プラットフォーム（常に"android"）
+          example: "android"
+        playerAccountId:
+          type: string
+          nullable: true
+          description: プレイヤーアカウントID（オプション）
+          example: "player-12345"
+
+    TokenRegistrationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: トークンID
+          example: "token-xyz789"
+        token:
+          type: string
+          description: 登録されたFCMトークン
+          example: "fG4H8kJ2mL9nP3qR5sT7vW0xY2zA4bC6dE8fG0hI2jK4lM6"
+        platform:
+          type: string
+          description: プラットフォーム
+          example: "android"
+        playerAccountId:
+          type: string
+          nullable: true
+          description: プレイヤーアカウントID
+          example: "player-12345"
+        createdAt:
+          type: string
+          format: date-time
+          description: 登録日時（ISO 8601形式）
+          example: "2025-10-30T12:34:56Z"
+
+    TokenUpdateRequest:
+      type: object
+      properties:
+        playerAccountId:
+          type: string
+          nullable: true
+          description: 新しいプレイヤーアカウントID
+          example: "player-67890"
+
+    TokenUpdateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: トークンID
+          example: "token-xyz789"
+        token:
+          type: string
+          description: FCMトークン
+          example: "fG4H8kJ2mL9nP3qR5sT7vW0xY2zA4bC6dE8fG0hI2jK4lM6"
+        playerAccountId:
+          type: string
+          nullable: true
+          description: 更新されたプレイヤーアカウントID
+          example: "player-67890"
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時（ISO 8601形式）
+          example: "2025-10-30T13:45:67Z"
+
+    NotificationStatusResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: 通知ID
+          example: "notification-abc123"
+        title:
+          type: string
+          description: 通知タイトル
+          example: "イベント開始！"
+        body:
+          type: string
+          description: 通知本文
+          example: "限定イベントが始まりました。今すぐ参加しよう！"
+        status:
+          type: string
+          enum: [pending, sent, delivered, failed]
+          description: 配信ステータス
+          example: "delivered"
+        sentAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 送信日時
+          example: "2025-10-30T12:00:00Z"
+        deliveredAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 配信日時
+          example: "2025-10-30T12:00:02Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: エラーコード
+          example: "INVALID_TOKEN"
+        message:
+          type: string
+          description: エラーメッセージ
+          example: "The provided token is invalid or has expired."
+        details:
+          type: object
+          nullable: true
+          description: 追加のエラー詳細
+          additionalProperties: true
