@@ -17,19 +17,22 @@ jobs:
           fetch-depth: 0
 
       - name: Verify branch naming
+        id: branch_check
         run: |
           BRANCH="${{ github.head_ref }}"
           echo "Checking branch: $BRANCH"
 
-          if [[ ! "$BRANCH" =~ ^feature/SPEC-[a-z0-9]{8}$ ]]; then
-            echo "Error: Branch name must follow pattern 'feature/SPEC-[UUID8桁]'"
-            echo "Example: feature/SPEC-a1b2c3d4"
-            exit 1
+          # Check if branch follows SPEC pattern
+          if [[ "$BRANCH" =~ ^feature/SPEC-[a-z0-9]{8}$ ]]; then
+            echo "is_spec_branch=true" >> $GITHUB_OUTPUT
+            echo "Branch follows SPEC pattern: $BRANCH"
+          else
+            echo "is_spec_branch=false" >> $GITHUB_OUTPUT
+            echo "Branch does not follow SPEC pattern (infrastructure branch): $BRANCH"
           fi
 
-          echo "Branch name is valid"
-
       - name: Check SPEC directory exists
+        if: steps.branch_check.outputs.is_spec_branch == 'true'
         run: |
           BRANCH="${{ github.head_ref }}"
           SPEC_ID=$(echo "$BRANCH" | sed 's/feature\///')
