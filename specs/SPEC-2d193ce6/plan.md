@@ -362,7 +362,7 @@ OpenAPI 3.0仕様を生成：
 - [x] Phase 0: Research完了 ✓
 - [x] Phase 1: Design完了 ✓
 - [x] Phase 2: Task planning完了 ✓
-- [ ] Phase 3: Tasks生成済み (/speckit.tasks コマンドで実行)
+- [x] Phase 3: Tasks生成済み ✓ (60タスク、tasks.md作成完了)
 - [ ] Phase 4: 実装完了
 - [ ] Phase 5: 検証合格
 
