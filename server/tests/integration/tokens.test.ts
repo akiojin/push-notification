@@ -4,16 +4,58 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 vi.mock('../../src/lib/device/index.js', () => ({
   upsertDevice: vi.fn(async (input: { token: string; platform: string; playerAccountId?: string }) => ({
     id: 'device-id',
-    ...input
+    ...input,
+    createdAt: new Date('2025-01-01T00:00:00Z'),
+    updatedAt: new Date('2025-01-02T00:00:00Z')
   })),
-  deleteDevice: vi.fn(async () => undefined)
+  deleteDevice: vi.fn(async () => undefined),
+  findDeviceByToken: vi.fn(async (token: string) =>
+    token === 'missing'
+      ? null
+      : {
+          id: 'device-id',
+          token,
+          platform: 'IOS',
+          playerAccountId: 'player-1',
+          createdAt: new Date('2025-01-01T00:00:00Z'),
+          updatedAt: new Date('2025-01-02T00:00:00Z')
+        }
+  ),
+  listNotificationsByDevice: vi.fn(async () => [
+    {
+      id: 'delivery-id',
+      notificationId: 'notif-id',
+      deviceId: 'device-id',
+      status: 'SUCCESS',
+      errorCode: null,
+      errorMessage: null,
+      deliveredAt: new Date('2025-01-03T00:00:00Z'),
+      createdAt: new Date('2025-01-03T00:00:00Z'),
+      updatedAt: new Date('2025-01-03T00:00:00Z'),
+      notification: {
+        id: 'notif-id',
+        title: 'Hello',
+        body: 'World',
+        imageUrl: null,
+        customData: null,
+        createdAt: new Date('2025-01-01T00:00:00Z')
+      }
+    }
+  ])
 }));
 
 import { buildServer } from '../../src/server.js';
-import { deleteDevice, upsertDevice } from '../../src/lib/device/index.js';
+import {
+  deleteDevice,
+  findDeviceByToken,
+  listNotificationsByDevice,
+  upsertDevice
+} from '../../src/lib/device/index.js';
 
 const mockedUpsert = vi.mocked(upsertDevice);
 const mockedDelete = vi.mocked(deleteDevice);
+const mockedFind = vi.mocked(findDeviceByToken);
+const mockedList = vi.mocked(listNotificationsByDevice);
 
 describe('tokens routes', () => {
   const originalEnv = { ...process.env };
@@ -36,6 +78,41 @@ describe('tokens routes', () => {
   beforeEach(() => {
     mockedUpsert.mockClear();
     mockedDelete.mockClear();
+    mockedFind.mockClear();
+    mockedList.mockClear();
+  });
+
+  it('retrieves device by token with deliveries', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/tokens/device-token',
+      headers: {
+        'x-api-key': 'test-key'
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body).toHaveProperty('id', 'device-id');
+    expect(body).toHaveProperty('deliveries');
+    expect(Array.isArray(body.deliveries)).toBe(true);
+    expect(mockedFind).toHaveBeenCalledWith('device-token');
+    expect(mockedList).toHaveBeenCalledWith('device-id');
+  });
+
+  it('returns 404 when device token not found', async () => {
+    mockedFind.mockResolvedValueOnce(null);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/tokens/missing',
+      headers: {
+        'x-api-key': 'test-key'
+      }
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({ error: 'Token not found' });
   });
 
   it('creates or updates a device token', async () => {

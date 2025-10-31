@@ -2,7 +2,12 @@ import { Prisma } from '@prisma/client';
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
-import { deleteDevice, upsertDevice } from '../lib/device/index.js';
+import {
+  deleteDevice,
+  findDeviceByToken,
+  listNotificationsByDevice,
+  upsertDevice,
+} from '../lib/device/index.js';
 
 const registerBody = z.object({
   token: z.string().min(1),
@@ -12,6 +17,26 @@ const registerBody = z.object({
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const tokensRoutes: FastifyPluginAsync = async (fastify) => {
+  fastify.get('/api/v1/tokens/:token', async (request, reply) => {
+    const params = z.object({ token: z.string().min(1) }).parse(request.params);
+    const device = await findDeviceByToken(params.token);
+    if (!device) {
+      reply.code(404).send({ error: 'Token not found' });
+      return;
+    }
+    const deliveries = await listNotificationsByDevice(device.id);
+
+    reply.send({
+      id: device.id,
+      token: device.token,
+      platform: device.platform,
+      playerAccountId: device.playerAccountId,
+      createdAt: device.createdAt,
+      updatedAt: device.updatedAt,
+      deliveries
+    });
+  });
+
   fastify.post('/api/v1/tokens', async (request, reply) => {
     const body = registerBody.parse(request.body);
     const device = await upsertDevice(body);

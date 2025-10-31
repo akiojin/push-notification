@@ -38,3 +38,11 @@ export async function findDeviceByToken(token: string) {
     where: { token },
   });
 }
+
+export async function listNotificationsByDevice(deviceId: string) {
+  return prisma.deliveryLog.findMany({
+    where: { deviceId },
+    include: { notification: true },
+    orderBy: { createdAt: 'desc' },
+  });
+}
