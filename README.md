@@ -36,6 +36,14 @@ npm test            # Vitest (unit/integration)
 npm run lint        # ESLint
 ```
 
+ローカルで PostgreSQL を準備するには `server/docker-compose.yml` を利用してください。
+
+```bash
+cd server
+docker compose up -d db
+```
+DB 初期化後は `npx prisma migrate deploy` でマイグレーションを適用できます。
+
 > Prisma マイグレーション / Testcontainers は未導入。PostgreSQL を用いた統合テストは別途構築が必要です。
 
 ## iOS SDK (`ios-sdk/`)
@@ -89,6 +97,17 @@ cd android-sdk
 - [ ] iOS/Android SDK からの通知コールバック → Unity/Unreal への伝播
 - [ ] CI/CD パイプライン整備 (Node, Swift, Gradle, Unity, Unreal)
 - [ ] サンプルアプリ/ゲームの追加 (エンドツーエンド検証)
+
+## CI
+
+GitHub Actions 上で以下のワークフローが自動実行されます:
+
+| Workflow | 対象 | 内容 |
+| --- | --- | --- |
+| `.github/workflows/server.yml` | server | Node 22 で lint / Prisma migrate / Vitest |
+| `.github/workflows/android.yml` | android-sdk | Gradle Wrapper で `:android-sdk:test` |
+| `.github/workflows/ios.yml` | ios-sdk | macOS runner 上で `swift test` |
+| `.github/workflows/unity.yml` | unity-sdk | Unity 2022.3 Edit Mode tests |
 
 ## ライセンス
 Apache License 2.0
