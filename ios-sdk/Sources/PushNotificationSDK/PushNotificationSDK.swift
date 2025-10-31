@@ -36,7 +36,9 @@ public final class PushNotificationSDK: NSObject {
         notificationProcessor = NotificationProcessor()
         appStateObserver = DefaultAppStateObserver()
         super.init()
+#if canImport(UIKit)
         authorizationCenter.delegate = self
+#endif
         appStateObserver.startObserving(self)
     }
 
