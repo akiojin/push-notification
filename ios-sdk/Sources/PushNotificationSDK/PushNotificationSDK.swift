@@ -10,6 +10,7 @@ public enum PushNotificationError: Error {
     case invalidConfiguration
 }
 
+@available(macOS 10.14, *)
 public protocol PushNotificationDelegate: AnyObject {
     func pushNotificationSDK(_ sdk: PushNotificationSDK, didReceiveToken token: String)
     func pushNotificationSDK(_ sdk: PushNotificationSDK, didReceiveNotification response: UNNotificationResponse)
@@ -18,6 +19,7 @@ public protocol PushNotificationDelegate: AnyObject {
 }
 
 @MainActor
+@available(macOS 10.14, *)
 public final class PushNotificationSDK: NSObject {
     public static let shared = PushNotificationSDK()
 
@@ -91,6 +93,7 @@ public final class PushNotificationSDK: NSObject {
 }
 
 #if canImport(UIKit)
+@available(macOS 10.14, *)
 extension PushNotificationSDK: UNUserNotificationCenterDelegate {
     public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         handleNotificationResponse(response)
