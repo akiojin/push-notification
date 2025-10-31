@@ -15,8 +15,18 @@ const createNotificationSchema = z.object({
 const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/api/v1/notifications', async (request, reply) => {
     const payload = createNotificationSchema.parse(request.body);
-    const notification = await createNotification(payload);
-    reply.code(202).send({ id: notification.id });
+
+    try {
+      const notification = await createNotification(payload);
+      reply.code(202).send({ id: notification.id });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.startsWith('Unknown device tokens')) {
+        reply.code(400).send({ error: message });
+        return;
+      }
+      throw error;
+    }
   });
 };
 
