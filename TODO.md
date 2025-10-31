@@ -1,7 +1,9 @@
 - [x] Android CI の `DeviceTokenRegistrarTest` が失敗する原因を特定する
 - [x] テスト用 `Call.Factory` を安定してリクエストを記録できる形に改善する
 - [x] 必要に応じて `DeviceTokenRegistrar` 実装も併せて調整する（今回は変更不要と判断）
-- [ ] 修正後の動作確認（ローカルまたはロジックでの検証）を行う
+- [x] 修正後の動作確認（ローカルで `./gradlew test` 実行）を行う
 - [x] 変更内容をコミットしてプッシュする
 - [x] GitHub Actions の Android ジョブで Java 17 設定を明示する
 - [x] 設定変更をコミットしてプッシュする
+- [x] `JSONObject` の未モック例外を解消するためのテスト依存関係を追加する
+- [x] Android 単体テストがローカルで成功することを確認する
