@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify branch naming
+        id: branch_check
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "Checking branch: $BRANCH"
+
+          # Check if branch follows SPEC pattern
+          if [[ "$BRANCH" =~ ^feature/SPEC-[a-z0-9]{8}$ ]]; then
+            echo "is_spec_branch=true" >> $GITHUB_OUTPUT
+            echo "Branch follows SPEC pattern: $BRANCH"
+          else
+            echo "is_spec_branch=false" >> $GITHUB_OUTPUT
+            echo "Branch does not follow SPEC pattern (infrastructure branch): $BRANCH"
+          fi
+
+      - name: Check SPEC directory exists
+        if: steps.branch_check.outputs.is_spec_branch == 'true'
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          SPEC_ID=$(echo "$BRANCH" | sed 's/feature\///')
+          SPEC_DIR="specs/$SPEC_ID"
+
+          echo "Checking for SPEC directory: $SPEC_DIR"
+
+          if [ ! -d "$SPEC_DIR" ]; then
+            echo "Error: SPEC directory not found: $SPEC_DIR"
+            exit 1
+          fi
+
+          if [ ! -f "$SPEC_DIR/spec.md" ]; then
+            echo "Error: spec.md not found in $SPEC_DIR"
+            exit 1
+          fi
+
+          echo "SPEC directory structure is valid"
+
+      - name: Check commit messages
+        run: |
+          echo "Checking commit messages..."
+
+          # Get the base branch (main) commit
+          git fetch origin main:main
+
+          # Check all commits in this PR
+          COMMITS=$(git log main..HEAD --oneline)
+
+          if [ -z "$COMMITS" ]; then
+            echo "No commits found in this PR"
+            exit 0
+          fi
+
+          echo "Commits in this PR:"
+          echo "$COMMITS"
+
+          # Basic check: commits should not be empty
+          if git log main..HEAD --format=%B | grep -q '^$'; then
+            echo "Warning: Some commits have empty messages"
+          fi
+
+          echo "Commit message check completed"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "CI checks completed for PR from ${{ github.head_ref }} to ${{ github.base_ref }}"
