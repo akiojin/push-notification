@@ -27,5 +27,6 @@ jobs:
           xcodebuild \
             -scheme "$SCHEME" \
             -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -package-path . \
             -skipPackagePluginValidation \
             test
