@@ -1,0 +1,14 @@
+{
+  "name": "com.push.notification.sdk",
+  "displayName": "Push Notification SDK",
+  "version": "0.1.0",
+  "unity": "2022.3",
+  "description": "Cross-platform push notification bridge for Unity games integrating with native iOS/Android SDKs and REST backend.",
+  "author": {
+    "name": "Push Notification Team",
+    "email": "support@example.com"
+  },
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  }
+}
