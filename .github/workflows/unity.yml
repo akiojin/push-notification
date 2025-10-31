@@ -9,6 +9,8 @@ on:
 jobs:
   unity-editmode-test:
     runs-on: ubuntu-latest
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,10 +21,25 @@ jobs:
           path: ~/.cache/unity3d
           key: unity-${{ runner.os }}
 
+      - name: Check Unity license secret
+        id: license
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE secret not configured. Unity tests will be skipped."
+          else
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run Unity EditMode tests
         uses: game-ci/unity-test-runner@v4
+        if: steps.license.outputs.missing == 'false'
         with:
           projectPath: unity-sdk
           testMode: editmode
           unityVersion: 2022.3.21f1
           githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Report skipped Unity tests
+        if: steps.license.outputs.missing == 'true'
+        run: echo "Unity tests skipped because UNITY_LICENSE secret is not configured."
