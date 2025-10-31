@@ -1,0 +1,25 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0",
+  "FriendlyName": "Push Notification Plugin",
+  "Description": "Unified push notification integration for iOS and Android with REST backend registration.",
+  "Category": "Messaging",
+  "CreatedBy": "Push Notification Team",
+  "CreatedByURL": "https://example.com",
+  "DocsURL": "https://example.com/docs",
+  "MarketplaceURL": "",
+  "SupportURL": "https://example.com/support",
+  "CanContainContent": false,
+  "IsBetaVersion": true,
+  "IsExperimentalVersion": true,
+  "Installed": false,
+  "Modules": [
+    {
+      "Name": "PushNotificationPlugin",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": []
+}

@@ -1,0 +1,5 @@
+UnityPushNotification/*
+!UnityPushNotification/Packages/
+UnityPushNotification/Packages/*
+!UnityPushNotification/Packages/com.akiojin.unity-push-notification/
+!UnityPushNotification/Packages/com.akiojin.unity-push-notification/**

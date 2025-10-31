@@ -1,0 +1,40 @@
+{
+  "name": "com.akiojin.unity-push-notification",
+  "displayName": "Unity Push Notification",
+  "version": "0.1.0",
+  "unity": "2022.3",
+  "description": "Cross-platform push notification bridge for Unity games integrating with native iOS/Android SDKs and REST backend.",
+  "keywords": [
+    "push",
+    "notification",
+    "apns",
+    "fcm",
+    "ios",
+    "android"
+  ],
+  "author": {
+    "name": "akiojin",
+    "email": "akio-jinsenji@cloud-creative-studios.com",
+    "url": "https://github.com/akiojin"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akiojin/push-notification.git"
+  },
+  "homepage": "https://github.com/akiojin/push-notification",
+  "bugs": {
+    "url": "https://github.com/akiojin/push-notification/issues"
+  },
+  "license": "Apache-2.0",
+  "hideInEditor": false,
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  },
+  "samples": [
+    {
+      "displayName": "Minimal Setup",
+      "description": "Basic example showing how to initialise the SDK and listen for token / notification callbacks.",
+      "path": "Samples~/Minimal"
+    }
+  ]
+}

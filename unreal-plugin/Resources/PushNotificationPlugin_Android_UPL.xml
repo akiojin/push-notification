@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <gameActivityClassAdditions>
+        <insert>
+            <![CDATA[
+            <provider
+                android:name="com.push.notificationsdk.PushNotificationContentProvider"
+                android:authorities="${applicationId}.pushnotificationprovider"
+                android:exported="false" />
+            ]]>
+        </insert>
+    </gameActivityClassAdditions>
+    <gradleProperties>
+        <insert name="PushNotificationGradleProps">
+            <![CDATA[
+            org.gradle.jvmargs=-Xmx2g
+            ]]>
+        </insert>
+    </gradleProperties>
+    <buildGradleAdditions>
+        <insert>
+            <![CDATA[
+            implementation project(':android-sdk')
+            ]]>
+        </insert>
+    </buildGradleAdditions>
+</root>
