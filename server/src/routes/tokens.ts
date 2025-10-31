@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
@@ -19,7 +20,16 @@ const tokensRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.delete('/api/v1/tokens/:token', async (request, reply) => {
     const params = z.object({ token: z.string().min(1) }).parse(request.params);
-    await deleteDevice(params.token);
+    try {
+      await deleteDevice(params.token);
+    } catch (error) {
+      const maybeError = error as { code?: string; name?: string } | undefined;
+      if (maybeError?.code === 'P2025' || maybeError?.name === 'PrismaClientKnownRequestError') {
+        reply.code(204).send();
+        return;
+      }
+      throw error;
+    }
     reply.code(204).send();
   });
 };
