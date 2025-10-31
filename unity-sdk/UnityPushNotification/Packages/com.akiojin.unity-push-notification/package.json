@@ -21,6 +21,10 @@
     "type": "git",
     "url": "https://github.com/akiojin/push-notification.git"
   },
+  "homepage": "https://github.com/akiojin/push-notification",
+  "bugs": {
+    "url": "https://github.com/akiojin/push-notification/issues"
+  },
   "license": "Apache-2.0",
   "hideInEditor": false,
   "dependencies": {
