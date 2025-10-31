@@ -30,6 +30,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Prepare environment file
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          RATE_LIMIT_MAX: ${{ secrets.RATE_LIMIT_MAX }}
+          RATE_LIMIT_TIME_WINDOW: ${{ secrets.RATE_LIMIT_TIME_WINDOW }}
+          DELIVERY_RETRY_INTERVAL_MS: ${{ secrets.DELIVERY_RETRY_INTERVAL_MS }}
+          DELIVERY_RETRY_BATCH_SIZE: ${{ secrets.DELIVERY_RETRY_BATCH_SIZE }}
+          APNS_KEY_ID: ${{ secrets.APNS_KEY_ID }}
+          APNS_TEAM_ID: ${{ secrets.APNS_TEAM_ID }}
+          APNS_BUNDLE_ID: ${{ secrets.APNS_BUNDLE_ID }}
+          APNS_PRIVATE_KEY: ${{ secrets.APNS_PRIVATE_KEY }}
+          FCM_CREDENTIALS: ${{ secrets.FCM_CREDENTIALS }}
+        run: |
+          cp .env.example .env
+          echo "DATABASE_URL=${DATABASE_URL}" >> .env
+          echo "API_KEY=${API_KEY}" >> .env
+          if [ -n "${RATE_LIMIT_MAX}" ]; then echo "RATE_LIMIT_MAX=${RATE_LIMIT_MAX}" >> .env; fi
+          if [ -n "${RATE_LIMIT_TIME_WINDOW}" ]; then echo "RATE_LIMIT_TIME_WINDOW=${RATE_LIMIT_TIME_WINDOW}" >> .env; fi
+          if [ -n "${DELIVERY_RETRY_INTERVAL_MS}" ]; then echo "DELIVERY_RETRY_INTERVAL_MS=${DELIVERY_RETRY_INTERVAL_MS}" >> .env; fi
+          if [ -n "${DELIVERY_RETRY_BATCH_SIZE}" ]; then echo "DELIVERY_RETRY_BATCH_SIZE=${DELIVERY_RETRY_BATCH_SIZE}" >> .env; fi
+          if [ -n "${APNS_KEY_ID}" ]; then echo "APNS_KEY_ID=${APNS_KEY_ID}" >> .env; fi
+          if [ -n "${APNS_TEAM_ID}" ]; then echo "APNS_TEAM_ID=${APNS_TEAM_ID}" >> .env; fi
+          if [ -n "${APNS_BUNDLE_ID}" ]; then echo "APNS_BUNDLE_ID=${APNS_BUNDLE_ID}" >> .env; fi
+          if [ -n "${APNS_PRIVATE_KEY}" ]; then printf "APNS_PRIVATE_KEY=%s" "${APNS_PRIVATE_KEY}" >> .env; fi
+          if [ -n "${FCM_CREDENTIALS}" ]; then echo "FCM_CREDENTIALS=${FCM_CREDENTIALS}" >> .env; fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
