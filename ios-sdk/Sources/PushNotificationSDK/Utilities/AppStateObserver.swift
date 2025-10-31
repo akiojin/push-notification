@@ -3,10 +3,12 @@ import Foundation
 import UIKit
 #endif
 
+@available(macOS 10.14, *)
 protocol AppStateObserving: AnyObject {
     func startObserving(_ sdk: PushNotificationSDK)
 }
 
+@available(macOS 10.14, *)
 final class DefaultAppStateObserver: AppStateObserving {
     private var notificationCenter: NotificationCenter
 
