@@ -1,6 +1,7 @@
 import Foundation
 import UserNotifications
 
+@MainActor
 @objc(PNPushNotificationSDK)
 public final class PushNotificationSDKObjC: NSObject {
     private let sdk = PushNotificationSDK.shared
