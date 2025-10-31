@@ -1,0 +1,6 @@
+Binaries/
+Intermediate/
+DerivedDataCache/
+Saved/
+.vscode/
+.DS_Store
