@@ -1,0 +1,28 @@
+name: Unity SDK CI
+
+on:
+  push:
+    branches: [ "main", "feature/push-notification" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  unity-editmode-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Unity
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/unity3d
+          key: unity-${{ runner.os }}
+
+      - name: Run Unity EditMode tests
+        uses: game-ci/unity-test-runner@v4
+        with:
+          projectPath: unity-sdk
+          testMode: editmode
+          unityVersion: 2022.3.21f1
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
