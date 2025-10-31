@@ -52,3 +52,18 @@ Swagger ドキュメント: `GET /docs`
 ## テスト
 
 `npm test` 実行時、統合テストは Fastify インスタンスをインメモリで構築します。PostgreSQL 接続が必要なテストは今後 Testcontainers 化する予定です。
+
+## 環境変数
+
+| 変数 | 説明 | デフォルト |
+| --- | --- | --- |
+| `API_KEY` | API 認証に使用するキー | - |
+| `DATABASE_URL` | PostgreSQL 接続 URL | - |
+| `RATE_LIMIT_MAX` | 1 分間のリクエスト上限 | `100` |
+| `RATE_LIMIT_TIME_WINDOW` | レート制限の時間窓 | `1 minute` |
+| `DELIVERY_RETRY_INTERVAL_MS` | 配信リトライワーカーのポーリング間隔 (ms) | `1000` |
+| `DELIVERY_RETRY_BATCH_SIZE` | リトライ 1 周期で処理する DeliveryLog 件数 | `20` |
+| `APNS_KEY_ID` / `APNS_TEAM_ID` / `APNS_BUNDLE_ID` / `APNS_PRIVATE_KEY` | APNs 配信用資格情報 | - |
+| `FCM_CREDENTIALS` | FCM サービスアカウント JSON のパス | - |
+
+> 本番環境では配信 SLA に応じて `DELIVERY_RETRY_INTERVAL_MS` と `DELIVERY_RETRY_BATCH_SIZE` を調整してください。
