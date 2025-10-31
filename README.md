@@ -134,5 +134,7 @@ GitHub Actions 上で以下のワークフローが自動実行されます:
 | `.github/workflows/ios.yml` | ios-sdk | macOS runner 上で `swift test` |
 | `.github/workflows/unity.yml` | unity-sdk | Unity 2022.3 Edit Mode tests |
 
+詳細な CI 設定と Secrets については [`docs/CI.md`](docs/CI.md) を参照してください。
+
 ## ライセンス
 Apache License 2.0
