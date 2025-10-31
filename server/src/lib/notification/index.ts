@@ -52,3 +52,17 @@ export async function createNotification(input: NotificationCreateInput) {
     return notification;
   });
 }
+
+export async function getNotificationWithDeliveries(id: string) {
+  return prisma.notification.findUnique({
+    where: { id },
+    include: {
+      deliveries: {
+        include: {
+          device: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+  });
+}
