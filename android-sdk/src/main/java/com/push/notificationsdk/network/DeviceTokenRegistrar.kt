@@ -1,5 +1,6 @@
 package com.push.notificationsdk.network
 
+import okhttp3.Call
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -7,7 +8,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 
 class DeviceTokenRegistrar(
-    private val client: OkHttpClient = OkHttpClient()
+    private val callFactory: Call.Factory = OkHttpClient()
 ) {
     private var apiKey: String? = null
     private var backendUrl: String? = null
@@ -33,7 +34,7 @@ class DeviceTokenRegistrar(
             .addHeader("Content-Type", "application/json")
             .build()
 
-        client.newCall(request).execute().use { response ->
+        callFactory.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 throw IllegalStateException("Failed to register token: ${response.code}")
             }
