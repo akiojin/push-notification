@@ -16,6 +16,14 @@ const envSchema = z.object({
     .regex(/^\d+$/)
     .optional(),
   RATE_LIMIT_TIME_WINDOW: z.string().optional(),
+  DELIVERY_RETRY_INTERVAL_MS: z
+    .string()
+    .regex(/^\d+$/)
+    .optional(),
+  DELIVERY_RETRY_BATCH_SIZE: z
+    .string()
+    .regex(/^\d+$/)
+    .optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

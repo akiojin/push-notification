@@ -113,4 +113,14 @@ describe('delivery-retry job', () => {
 
     expect(dispatchDeliveries).not.toHaveBeenCalled();
   });
+
+  it('applies provided batch size when querying pending deliveries', async () => {
+    vi.mocked(prisma.deliveryLog.findMany).mockResolvedValueOnce([]);
+
+    await processPendingDeliveries(mockLogger, { batchSize: 5 });
+
+    expect(prisma.deliveryLog.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 5 }),
+    );
+  });
 });

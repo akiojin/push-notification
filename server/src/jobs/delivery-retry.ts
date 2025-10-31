@@ -5,12 +5,21 @@ import { prisma } from '../lib/prisma.js';
 import { dispatchDeliveries, MAX_DELIVERY_ATTEMPTS } from '../lib/notification/index.js';
 
 const DEFAULT_POLL_INTERVAL_MS = 1000;
+const DEFAULT_BATCH_SIZE = 20;
+
+interface WorkerOptions {
+  intervalMs?: number;
+  batchSize?: number;
+}
 
 let timer: NodeJS.Timeout | null = null;
 let processing = false;
 let stopped = true;
 
-export async function processPendingDeliveries(logger: FastifyBaseLogger) {
+export async function processPendingDeliveries(
+  logger: FastifyBaseLogger,
+  { batchSize = DEFAULT_BATCH_SIZE }: { batchSize?: number } = {},
+) {
   const now = new Date();
   const pending = await prisma.deliveryLog.findMany({
     where: {
@@ -34,7 +43,7 @@ export async function processPendingDeliveries(logger: FastifyBaseLogger) {
     orderBy: {
       createdAt: 'asc',
     },
-    take: 20,
+    take: batchSize,
   });
 
   if (pending.length === 0) {
@@ -102,11 +111,15 @@ export async function processPendingDeliveries(logger: FastifyBaseLogger) {
   logger.info({ processed: pending.length }, 'delivery retry job processed pending deliveries');
 }
 
-export function startDeliveryRetryWorker(logger: FastifyBaseLogger, intervalMs = DEFAULT_POLL_INTERVAL_MS) {
+export function startDeliveryRetryWorker(
+  logger: FastifyBaseLogger,
+  options: WorkerOptions = {},
+) {
   if (timer) {
     return stopDeliveryRetryWorker;
   }
   stopped = false;
+  const { intervalMs = DEFAULT_POLL_INTERVAL_MS, batchSize = DEFAULT_BATCH_SIZE } = options;
 
   const tick = async () => {
     if (stopped) {
@@ -119,7 +132,7 @@ export function startDeliveryRetryWorker(logger: FastifyBaseLogger, intervalMs =
 
     processing = true;
     try {
-      await processPendingDeliveries(logger);
+      await processPendingDeliveries(logger, { batchSize });
     } catch (error) {
       logger.error({ err: error }, 'delivery retry job failed');
     } finally {

@@ -78,9 +78,16 @@ export async function buildServer() {
   app.get('/healthz', () => ({ status: 'ok' }));
 
   if (env.NODE_ENV !== 'test') {
-    startDeliveryRetryWorker(app.log);
+    const intervalValue = env.DELIVERY_RETRY_INTERVAL_MS ? Number(env.DELIVERY_RETRY_INTERVAL_MS) : undefined;
+    const batchValue = env.DELIVERY_RETRY_BATCH_SIZE ? Number(env.DELIVERY_RETRY_BATCH_SIZE) : undefined;
+
+    const stopWorker = startDeliveryRetryWorker(app.log, {
+      intervalMs: intervalValue && intervalValue > 0 ? intervalValue : undefined,
+      batchSize: batchValue && batchValue > 0 ? batchValue : undefined,
+    });
+
     app.addHook('onClose', async () => {
-      stopDeliveryRetryWorker();
+      stopWorker();
     });
   }
 
