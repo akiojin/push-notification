@@ -90,6 +90,7 @@ public final class PushNotificationSDK: NSObject {
     }
 }
 
+#if canImport(UIKit)
 extension PushNotificationSDK: UNUserNotificationCenterDelegate {
     public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         handleNotificationResponse(response)
@@ -100,3 +101,4 @@ extension PushNotificationSDK: UNUserNotificationCenterDelegate {
         return [.banner, .sound]
     }
 }
+#endif
