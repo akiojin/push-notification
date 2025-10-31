@@ -7,6 +7,11 @@ import { sendApnsNotification } from './apns.js';
 import { NotificationConfigurationError, NotificationProviderError } from './errors.js';
 import { sendFcmNotification } from './fcm.js';
 
+const MAX_ATTEMPTS = 3;
+const INITIAL_BACKOFF_MS = 50;
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const notificationCreateSchema = z.object({
   title: z.string().min(1),
   body: z.string().min(1),
@@ -130,41 +135,67 @@ export async function dispatchDeliveries({
         return;
       }
 
-      try {
-        if (device.platform === 'IOS') {
-          await sendApnsNotification({
-            token: device.token,
-            title: notification.title,
-            body: notification.body,
-            imageUrl: notification.imageUrl ?? undefined,
-            customData: payload.customData ?? undefined,
-          });
-        } else {
-          await sendFcmNotification({
-            token: device.token,
-            title: notification.title,
-            body: notification.body,
-            imageUrl: notification.imageUrl ?? undefined,
-            customData: payload.customData ?? undefined,
-          });
-        }
+      let attempt = 0;
+      while (attempt < MAX_ATTEMPTS) {
+        const attemptStartedAt = new Date();
+        try {
+          if (device.platform === Platform.IOS) {
+            await sendApnsNotification({
+              token: device.token,
+              title: notification.title,
+              body: notification.body,
+              imageUrl: notification.imageUrl ?? undefined,
+              customData: payload.customData ?? undefined,
+            });
+          } else {
+            await sendFcmNotification({
+              token: device.token,
+              title: notification.title,
+              body: notification.body,
+              imageUrl: notification.imageUrl ?? undefined,
+              customData: payload.customData ?? undefined,
+            });
+          }
 
-        await updateDeliveryStatus({
-          deliveryId: delivery.id,
-          status: DeliveryStatus.SUCCESS,
-        });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        const code =
-          error instanceof NotificationProviderError || error instanceof NotificationConfigurationError
-            ? error.code
-            : undefined;
-        await updateDeliveryStatus({
-          deliveryId: delivery.id,
-          status: DeliveryStatus.FAILED,
-          errorCode: code ?? 'DELIVERY_FAILED',
-          errorMessage: message,
-        });
+          await updateDeliveryStatus({
+            deliveryId: delivery.id,
+            status: DeliveryStatus.SUCCESS,
+            retryCount: attempt,
+            errorCode: null,
+            errorMessage: null,
+            lastAttemptAt: attemptStartedAt,
+            nextAttemptAt: null,
+            lastErrorAt: null,
+            deliveredAt: attemptStartedAt,
+          });
+          return;
+        } catch (error) {
+          attempt += 1;
+          const isLastAttempt = attempt >= MAX_ATTEMPTS;
+          const message = error instanceof Error ? error.message : String(error);
+          const code =
+            error instanceof NotificationProviderError || error instanceof NotificationConfigurationError
+              ? error.code
+              : undefined;
+          const backoff = INITIAL_BACKOFF_MS * 2 ** (attempt - 1);
+
+          await updateDeliveryStatus({
+            deliveryId: delivery.id,
+            status: isLastAttempt ? DeliveryStatus.FAILED : DeliveryStatus.PENDING,
+            errorCode: code ?? 'DELIVERY_FAILED',
+            errorMessage: message,
+            retryCount: attempt,
+            lastAttemptAt: attemptStartedAt,
+            lastErrorAt: attemptStartedAt,
+            nextAttemptAt: isLastAttempt ? null : new Date(attemptStartedAt.getTime() + backoff),
+          });
+
+          if (isLastAttempt) {
+            return;
+          }
+
+          await delay(backoff);
+        }
       }
     }),
   );

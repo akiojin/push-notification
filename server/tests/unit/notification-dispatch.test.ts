@@ -69,18 +69,34 @@ describe('dispatchDeliveries', () => {
       customData: undefined,
     });
 
-    expect(updateDeliveryStatus).toHaveBeenNthCalledWith(1, {
+    const firstCallArgs = vi.mocked(updateDeliveryStatus).mock.calls[0]?.[0];
+    const secondCallArgs = vi.mocked(updateDeliveryStatus).mock.calls[1]?.[0];
+
+    expect(firstCallArgs).toMatchObject({
       deliveryId: 'delivery-ios',
       status: 'SUCCESS',
+      retryCount: 0,
+      nextAttemptAt: null,
+      errorCode: null,
+      errorMessage: null,
     });
-    expect(updateDeliveryStatus).toHaveBeenNthCalledWith(2, {
+    expect(firstCallArgs?.lastAttemptAt).toBeInstanceOf(Date);
+    expect(firstCallArgs?.deliveredAt).toBeInstanceOf(Date);
+
+    expect(secondCallArgs).toMatchObject({
       deliveryId: 'delivery-android',
       status: 'SUCCESS',
+      retryCount: 0,
+      nextAttemptAt: null,
+      errorCode: null,
+      errorMessage: null,
     });
+    expect(secondCallArgs?.lastAttemptAt).toBeInstanceOf(Date);
+    expect(secondCallArgs?.deliveredAt).toBeInstanceOf(Date);
   });
 
   it('records failure details when provider throws error', async () => {
-    vi.mocked(sendApnsNotification).mockRejectedValueOnce(new NotificationProviderError('boom', 'APNS_ERROR'));
+    vi.mocked(sendApnsNotification).mockRejectedValue(new NotificationProviderError('boom', 'APNS_ERROR'));
 
     await dispatchDeliveries({
       notification: {
@@ -99,11 +115,18 @@ describe('dispatchDeliveries', () => {
       },
     });
 
-    expect(updateDeliveryStatus).toHaveBeenCalledWith({
+    expect(sendApnsNotification).toHaveBeenCalledTimes(3);
+
+    const lastCall = vi.mocked(updateDeliveryStatus).mock.calls.at(-1)?.[0];
+    expect(lastCall).toMatchObject({
       deliveryId: 'delivery-ios',
       status: 'FAILED',
       errorCode: 'APNS_ERROR',
       errorMessage: 'boom',
+      retryCount: 3,
+      nextAttemptAt: null,
     });
+    expect(lastCall?.lastAttemptAt).toBeInstanceOf(Date);
+    expect(lastCall?.lastErrorAt).toBeInstanceOf(Date);
   });
 });
