@@ -9,7 +9,7 @@ namespace PushNotification.SDK.Editor
         [MenuItem("PushNotificationSDK/Run EditMode Tests")]
         public static void RunEditModeTests()
         {
-            var api = UnityEngine.ScriptableObject.CreateInstance<TestRunnerApi>();
+            var api = new TestRunnerApi();
             var settings = new ExecutionSettings
             {
                 filters = new[]
