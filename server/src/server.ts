@@ -7,6 +7,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import Fastify from 'fastify';
 
 import { loadEnv } from './config/env.js';
+import { loadOpenApiDocument } from './config/openapi.js';
 import { getLoggerOptions } from './config/logger.js';
 import apiKeyAuth from './plugins/api-key-auth.js';
 import errorHandler from './plugins/error-handler.js';
@@ -44,13 +45,10 @@ export async function buildServer() {
     },
   });
 
+  const openApiDocument = loadOpenApiDocument();
+
   await app.register(swagger, {
-    openapi: {
-      info: {
-        title: 'Push Notification API',
-        version: '1.0.0',
-      },
-    },
+    openapi: openApiDocument,
   });
 
   await app.register(swaggerUi, {
