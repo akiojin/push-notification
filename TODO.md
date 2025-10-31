@@ -9,3 +9,5 @@
 - [x] Android 単体テストがローカルで成功することを確認する
 - [x] Docker イメージに Java 17 と Android SDK を組み込む
 - [x] docker-compose で Android SDK 関連の環境変数を公開する
+- [x] Android CI の push 対象ブランチに `feature/**` を含める
+- [ ] Required チェックが自動で実行されることを確認する

@@ -2,7 +2,9 @@ name: Android SDK CI
 
 on:
   push:
-    branches: [ "main", "feature/push-notification" ]
+    branches:
+      - main
+      - feature/**
   pull_request:
     branches: [ "main" ]
 
