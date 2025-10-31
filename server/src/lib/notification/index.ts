@@ -8,27 +8,45 @@ const notificationCreateSchema = z.object({
   body: z.string().min(1),
   imageUrl: z.string().url().optional(),
   customData: z.record(z.string(), z.any()).optional(),
-  deviceTokens: z.array(z.string().min(1)).min(1),
+  tokens: z.array(z.string().min(1)).min(1).max(1000),
 });
 
 export type NotificationCreateInput = z.infer<typeof notificationCreateSchema>;
 
-export async function createNotification(input: NotificationCreateInput) {
+export interface NotificationCreateResult {
+  notificationId: string;
+  deliveryLogs: Array<{
+    deviceId: string;
+    status: DeliveryStatus;
+  }>;
+}
+
+export class UnknownDeviceTokensError extends Error {
+  readonly tokens: string[];
+
+  constructor(tokens: string[]) {
+    super(`Unknown device tokens: ${tokens.join(', ')}`);
+    this.name = 'UnknownDeviceTokensError';
+    this.tokens = tokens;
+  }
+}
+
+export async function createNotification(input: NotificationCreateInput): Promise<NotificationCreateResult> {
   const data = notificationCreateSchema.parse(input);
 
   const devices = await prisma.device.findMany({
     where: {
       token: {
-        in: data.deviceTokens,
+        in: data.tokens,
       },
     },
   });
 
-  if (devices.length !== data.deviceTokens.length) {
-    const missing = data.deviceTokens.filter(
+  if (devices.length !== data.tokens.length) {
+    const missing = data.tokens.filter(
       (token) => !devices.some((device) => device.token === token),
     );
-    throw new Error(`Unknown device tokens: ${missing.join(', ')}`);
+    throw new UnknownDeviceTokensError(missing);
   }
 
   return prisma.$transaction(async (tx) => {
@@ -49,7 +67,13 @@ export async function createNotification(input: NotificationCreateInput) {
       })),
     });
 
-    return notification;
+    return {
+      notificationId: notification.id,
+      deliveryLogs: devices.map((device) => ({
+        deviceId: device.id,
+        status: DeliveryStatus.PENDING,
+      })),
+    };
   });
 }
 

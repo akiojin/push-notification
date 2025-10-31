@@ -1,12 +1,16 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../src/lib/notification/index.js', () => ({
-  createNotification: vi.fn(),
-  getNotificationWithDeliveries: vi.fn()
-}));
+vi.mock('../../src/lib/notification/index.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/lib/notification/index.js')>();
+  return {
+    ...actual,
+    createNotification: vi.fn(),
+    getNotificationWithDeliveries: vi.fn()
+  };
+});
 
 import { buildServer } from '../../src/server.js';
-import { createNotification, getNotificationWithDeliveries } from '../../src/lib/notification/index.js';
+import { UnknownDeviceTokensError, createNotification, getNotificationWithDeliveries } from '../../src/lib/notification/index.js';
 
 const mockedCreate = vi.mocked(createNotification);
 const mockedGet = vi.mocked(getNotificationWithDeliveries);
@@ -64,7 +68,10 @@ describe('notifications routes', () => {
 
     expect(response.statusCode).toBe(200);
     expect(mockedGet).toHaveBeenCalledWith('11111111-1111-1111-8111-111111111111');
-    expect(response.json()).toHaveProperty('notificationId', '11111111-1111-1111-8111-111111111111');
+    const body = response.json();
+    expect(body).toHaveProperty('notificationId', '11111111-1111-1111-8111-111111111111');
+    expect(body).toHaveProperty('deliveryLogs');
+    expect(Array.isArray(body.deliveryLogs)).toBe(true);
   });
 
   it('returns 404 when notification not found', async () => {
@@ -79,11 +86,24 @@ describe('notifications routes', () => {
     });
 
     expect(response.statusCode).toBe(404);
-    expect(response.json()).toEqual({ error: 'Notification not found' });
+    expect(response.json()).toEqual({
+      error: {
+        code: 'NOT_FOUND',
+        message: 'Notification not found',
+      },
+    });
   });
 
   it('creates notification and returns id', async () => {
-    mockedCreate.mockResolvedValueOnce({ id: 'notif-id' });
+    mockedCreate.mockResolvedValueOnce({
+      notificationId: 'notif-id',
+      deliveryLogs: [
+        {
+          deviceId: 'device-1',
+          status: 'PENDING',
+        },
+      ],
+    });
 
     const response = await app.inject({
       method: 'POST',
@@ -94,21 +114,29 @@ describe('notifications routes', () => {
       payload: {
         title: 'Hello',
         body: 'World',
-        deviceTokens: ['abc']
+        tokens: ['abc']
       }
     });
 
     expect(response.statusCode).toBe(202);
-    expect(response.json()).toEqual({ id: 'notif-id' });
+    expect(response.json()).toEqual({
+      notificationId: 'notif-id',
+      deliveryLogs: [
+        {
+          deviceId: 'device-1',
+          status: 'PENDING',
+        },
+      ],
+    });
     expect(mockedCreate).toHaveBeenCalledWith({
       title: 'Hello',
       body: 'World',
-      deviceTokens: ['abc']
+      tokens: ['abc']
     });
   });
 
   it('returns 400 when device tokens unknown', async () => {
-    mockedCreate.mockRejectedValueOnce(new Error('Unknown device tokens: abc'));
+    mockedCreate.mockRejectedValueOnce(new UnknownDeviceTokensError(['abc']));
 
     const response = await app.inject({
       method: 'POST',
@@ -119,11 +147,19 @@ describe('notifications routes', () => {
       payload: {
         title: 'Hello',
         body: 'World',
-        deviceTokens: ['abc']
+        tokens: ['abc']
       }
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toEqual({ error: 'Unknown device tokens: abc' });
+    expect(response.json()).toEqual({
+      error: {
+        code: 'UNKNOWN_TOKENS',
+        message: 'Unknown device tokens: abc',
+        details: {
+          tokens: ['abc'],
+        },
+      },
+    });
   });
 });

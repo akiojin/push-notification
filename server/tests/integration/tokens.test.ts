@@ -4,7 +4,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 vi.mock('../../src/lib/device/index.js', () => ({
   upsertDevice: vi.fn(async (input: { token: string; platform: string; playerAccountId?: string }) => ({
     id: 'device-id',
-    ...input,
+    token: input.token,
+    platform: input.platform,
+    playerAccountId: input.playerAccountId ?? null,
     createdAt: new Date('2025-01-01T00:00:00Z'),
     updatedAt: new Date('2025-01-02T00:00:00Z')
   })),
@@ -96,6 +98,7 @@ describe('tokens routes', () => {
     expect(body).toHaveProperty('id', 'device-id');
     expect(body).toHaveProperty('deliveries');
     expect(Array.isArray(body.deliveries)).toBe(true);
+    expect(body.deliveries[0]).toHaveProperty('notification');
     expect(mockedFind).toHaveBeenCalledWith('device-token');
     expect(mockedList).toHaveBeenCalledWith('device-id');
   });
@@ -112,7 +115,12 @@ describe('tokens routes', () => {
     });
 
     expect(response.statusCode).toBe(404);
-    expect(response.json()).toEqual({ error: 'Token not found' });
+    expect(response.json()).toEqual({
+      error: {
+        code: 'NOT_FOUND',
+        message: 'Token not found',
+      },
+    });
   });
 
   it('creates or updates a device token', async () => {
@@ -130,7 +138,14 @@ describe('tokens routes', () => {
 
     expect(response.statusCode).toBe(201);
     expect(mockedUpsert).toHaveBeenCalledWith({ token: 'abc', platform: 'IOS' });
-    expect(response.json()).toHaveProperty('id', 'device-id');
+    expect(response.json()).toEqual({
+      id: 'device-id',
+      token: 'abc',
+      platform: 'IOS',
+      playerAccountId: null,
+      createdAt: new Date('2025-01-01T00:00:00Z').toISOString(),
+      updatedAt: new Date('2025-01-02T00:00:00Z').toISOString()
+    });
   });
 
   it('deletes a device token and ignores missing records', async () => {
