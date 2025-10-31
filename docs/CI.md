@@ -40,12 +40,15 @@ Add the following secrets under your repository settings (Settings → Secrets a
     echo "DATABASE_URL=${DATABASE_URL}" >> .env
     echo "API_KEY=${API_KEY}" >> .env
     # ...
+
+- name: Validate environment configuration
+  run: npm run env:check
 ```
 
 ## Local Validation
 
 1. Duplicate `.env.example` to `.env` and fill in required values.
-2. Run `npm run prisma:generate` and `npm test` within `server/` to mimic the CI pipeline.
+2. Run `npm run env:check`, `npm run prisma:generate` and `npm test` within `server/` to mimic the CI pipeline.
 3. Optionally replicate the CI database by running `docker compose up -d db` in `server/` and pointing `DATABASE_URL` to the container.
 
 ## Updating Secrets

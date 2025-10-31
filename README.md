@@ -25,6 +25,7 @@
 cd server
 cp .env.example .env            # 環境変数テンプレートをコピー
 npm install
+npm run env:check               # 必須環境変数のチェック
 npm run prisma:generate
 ```
 
