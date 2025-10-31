@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
@@ -33,7 +32,7 @@ const tokensRoutes: FastifyPluginAsync = async (fastify) => {
       playerAccountId: device.playerAccountId,
       createdAt: device.createdAt,
       updatedAt: device.updatedAt,
-      deliveries
+      deliveries,
     });
   });
 
