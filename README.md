@@ -23,10 +23,12 @@
 ### セットアップ
 ```bash
 cd server
-cp .env.example .env            # DATABASE_URL, API_KEY を設定
+cp .env.example .env            # 環境変数テンプレートをコピー
 npm install
 npm run prisma:generate
 ```
+
+`.env` には API キーや配信リトライワーカーの設定を記載します（詳細は `server/.env.example` 参照）。CI では `.env.example` をベースに Secrets で上書きしてください。
 
 ### 実行・テスト
 ```bash
