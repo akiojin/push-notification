@@ -1,0 +1,14 @@
+{
+  "NSPrivacyTracking": false,
+  "NSPrivacyTrackingDomains": [],
+  "NSPrivacyCollectedDataTypes": [
+    {
+      "NSPrivacyCollectedDataType": "DeviceID",
+      "NSPrivacyCollectedDataTypeLinked": true,
+      "NSPrivacyCollectedDataTypeTracking": false,
+      "NSPrivacyCollectedDataTypePurposes": [
+        "AppFunctionality"
+      ]
+    }
+  ]
+}
