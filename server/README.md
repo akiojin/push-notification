@@ -52,6 +52,7 @@ Swagger ドキュメント: `GET /docs`
 ## テスト
 
 `npm test` 実行時、統合テストは Fastify インスタンスをインメモリで構築します。PostgreSQL 接続が必要なテストは今後 Testcontainers 化する予定です。
+`DATABASE_URL` が未設定の場合、テスト前に Testcontainers で PostgreSQL コンテナを自動起動します。
 
 ## 環境変数
 

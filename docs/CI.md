@@ -48,7 +48,7 @@ Add the following secrets under your repository settings (Settings → Secrets a
 ## Local Validation
 
 1. Duplicate `.env.example` to `.env` and fill in required values.
-2. Run `npm run env:check`, `npm run prisma:generate` and `npm test` within `server/` to mimic the CI pipeline.
+2. Run `npm run env:check`, `npm run prisma:generate` and `npm test` within `server/` to mimic the CI pipeline。`DATABASE_URL` を指定していない場合、テスト実行時に Testcontainers が自動で PostgreSQL コンテナを起動します。
 3. Optionally replicate the CI database by running `docker compose up -d db` in `server/` and pointing `DATABASE_URL` to the container.
 
 ## Updating Secrets
