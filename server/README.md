@@ -43,6 +43,7 @@ npm run prisma:migrate
 
 - `POST /api/v1/tokens` デバイストークン登録/更新
 - `DELETE /api/v1/tokens/:token` デバイストークン削除
+- `GET /api/v1/tokens/:token` デバイストークン詳細と配信履歴取得
 - `POST /api/v1/notifications` 通知作成（配信ログ生成）
 - `GET /healthz` ヘルスチェック (API キー不要)
 
