@@ -50,4 +50,4 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 swift test
 ```
 
-テストではトークン変換とレジストラ構成チェックをカバーしています。
+テストではトークン変換とレジストラ構成チェックをカバーしており、GitHub Actions (macOS runner) でも自動実行されています。
