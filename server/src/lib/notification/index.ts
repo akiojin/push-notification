@@ -1,7 +1,11 @@
-import { DeliveryStatus, Prisma } from '@prisma/client';
+import { DeliveryStatus, Platform, Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
+import { updateDeliveryStatus } from '../delivery/index.js';
+import { sendApnsNotification } from './apns.js';
+import { NotificationConfigurationError, NotificationProviderError } from './errors.js';
+import { sendFcmNotification } from './fcm.js';
 
 const notificationCreateSchema = z.object({
   title: z.string().min(1),
@@ -49,7 +53,7 @@ export async function createNotification(input: NotificationCreateInput): Promis
     throw new UnknownDeviceTokensError(missing);
   }
 
-  return prisma.$transaction(async (tx) => {
+  const { notification, deliveries } = await prisma.$transaction(async (tx) => {
     const notification = await tx.notification.create({
       data: {
         title: data.title,
@@ -59,22 +63,39 @@ export async function createNotification(input: NotificationCreateInput): Promis
       },
     });
 
-    await tx.deliveryLog.createMany({
-      data: devices.map((device) => ({
-        notificationId: notification.id,
-        deviceId: device.id,
-        status: DeliveryStatus.PENDING,
-      })),
-    });
+    const deliveryRecords = await Promise.all(
+      devices.map((device) =>
+        tx.deliveryLog.create({
+          data: {
+            notificationId: notification.id,
+            deviceId: device.id,
+            status: DeliveryStatus.PENDING,
+          },
+          select: {
+            id: true,
+            deviceId: true,
+          },
+        }),
+      ),
+    );
 
-    return {
-      notificationId: notification.id,
-      deliveryLogs: devices.map((device) => ({
-        deviceId: device.id,
-        status: DeliveryStatus.PENDING,
-      })),
-    };
+    return { notification, deliveries: deliveryRecords };
   });
+
+  void dispatchDeliveries({
+    notification,
+    devices,
+    deliveries,
+    payload: data,
+  });
+
+  return {
+    notificationId: notification.id,
+    deliveryLogs: deliveries.map((delivery) => ({
+      deviceId: delivery.deviceId,
+      status: DeliveryStatus.PENDING,
+    })),
+  };
 }
 
 export async function getNotificationWithDeliveries(id: string) {
@@ -89,4 +110,62 @@ export async function getNotificationWithDeliveries(id: string) {
       },
     },
   });
+}
+
+async function dispatchDeliveries({
+  notification,
+  devices,
+  deliveries,
+  payload,
+}: {
+  notification: { id: string; title: string; body: string; imageUrl: string | null; customData: Prisma.InputJsonValue | null };
+  devices: Array<{ id: string; token: string; platform: Platform }>;
+  deliveries: Array<{ id: string; deviceId: string }>;
+  payload: NotificationCreateInput;
+}) {
+  await Promise.allSettled(
+    deliveries.map(async (delivery) => {
+      const device = devices.find((d) => d.id === delivery.deviceId);
+      if (!device) {
+        return;
+      }
+
+      try {
+        if (device.platform === 'IOS') {
+          await sendApnsNotification({
+            token: device.token,
+            title: notification.title,
+            body: notification.body,
+            imageUrl: notification.imageUrl ?? undefined,
+            customData: payload.customData ?? undefined,
+          });
+        } else {
+          await sendFcmNotification({
+            token: device.token,
+            title: notification.title,
+            body: notification.body,
+            imageUrl: notification.imageUrl ?? undefined,
+            customData: payload.customData ?? undefined,
+          });
+        }
+
+        await updateDeliveryStatus({
+          deliveryId: delivery.id,
+          status: DeliveryStatus.SUCCESS,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const code =
+          error instanceof NotificationProviderError || error instanceof NotificationConfigurationError
+            ? error.code
+            : undefined;
+        await updateDeliveryStatus({
+          deliveryId: delivery.id,
+          status: DeliveryStatus.FAILED,
+          errorCode: code ?? 'DELIVERY_FAILED',
+          errorMessage: message,
+        });
+      }
+    }),
+  );
 }
