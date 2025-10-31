@@ -64,6 +64,10 @@ Run EditMode tests via Unity Test Runner or CLI:
   -testResults results.xml
 ```
 
+## Samples
+
+Package Manager → *Unity Push Notification* → **Samples** から「Minimal Setup」をインポートすると、SDK 初期化の基本的な使い方を確認できます。
+
 ## Further Reading
 
 - Japanese documentation: [docs/README.ja.md](README.ja.md)

@@ -25,5 +25,12 @@
   "hideInEditor": false,
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "3.2.1"
-  }
+  },
+  "samples": [
+    {
+      "displayName": "Minimal Setup",
+      "description": "Basic example showing how to initialise the SDK and listen for token / notification callbacks.",
+      "path": "Samples~/Minimal"
+    }
+  ]
 }

@@ -70,14 +70,20 @@ cd android-sdk
 ./gradlew test            # ユニットテスト (MockK)
 ```
 
-## Unity パッケージ (`unity-sdk/`)
+## Unity パッケージ (`unity-sdk/UnityPushNotification/Packages/com.akiojin.unity-push-notification/`)
 
-- Unity Package Manager 用 `package.json`
+- Unity Package Manager 用 embedded package
 - `PushNotificationManager` が iOS/Android ブリッジ呼び出し & REST 登録
-- NUnit ベースの簡易テスト
+- NUnit ベースの簡易テスト / `Minimal Setup` サンプル同梱
 
 ### 追加方法
-`Packages/manifest.json` に `"com.push.notification.sdk": "file:../unity-sdk"` を追加。Unity Test Runner (Edit Mode) でテスト可。
+`Packages/manifest.json` に下記を追記してパッケージマネージャーから導入できます:
+
+```json
+"com.akiojin.unity-push-notification": "git+https://github.com/akiojin/push-notification.git?path=unity-sdk/UnityPushNotification/Packages/com.akiojin.unity-push-notification"
+```
+
+Unity Test Runner (Edit Mode) でテスト可。Samples タブから **Minimal Setup** をインポートして初期化例を確認してください。
 
 ## Unreal プラグイン (`unreal-plugin/`)
 

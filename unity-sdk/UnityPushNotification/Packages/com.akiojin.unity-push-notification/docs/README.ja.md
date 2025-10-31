@@ -72,6 +72,10 @@ Unity Test Runner (Edit Mode) で `unity-sdk/Tests/Runtime` の NUnit テスト�
 /Applications/Unity/Hub/Editor/2022.3.21f1/Unity -runTests -testResults results.xml -projectPath <path> -testPlatform editmode
 ```
 
+## サンプル
+
+パッケージマネージャーで「Unity Push Notification」を選択し、Samples セクションから **Minimal Setup** をインポートすると、初期化のサンプルスクリプトを利用できます。
+
 ## 今後のTODO
 
 - ネイティブ側から通知データを逆流させるコールバックブリッジ
