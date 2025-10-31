@@ -1,5 +1,5 @@
-push-notification/*
-!push-notification/Packages/
-push-notification/Packages/*
-!push-notification/Packages/com.akiojin.unity-push-notification/
-!push-notification/Packages/com.akiojin.unity-push-notification/**
+UnityPushNotification/*
+!UnityPushNotification/Packages/
+UnityPushNotification/Packages/*
+!UnityPushNotification/Packages/com.akiojin.unity-push-notification/
+!UnityPushNotification/Packages/com.akiojin.unity-push-notification/**

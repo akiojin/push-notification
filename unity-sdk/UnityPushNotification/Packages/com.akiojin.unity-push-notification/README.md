@@ -19,7 +19,7 @@ Packages/
 2. `Packages/manifest.json` に以下を追加
 
 ```json
-"com.akiojin.unity-push-notification": "file:../unity-sdk/push-notification/Packages/com.akiojin.unity-push-notification"
+"com.akiojin.unity-push-notification": "file:../unity-sdk/UnityPushNotification/Packages/com.akiojin.unity-push-notification"
 ```
 
 3. プロジェクトに `com.unity.nuget.newtonsoft-json` 依存が追加されます
