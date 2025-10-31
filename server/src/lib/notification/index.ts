@@ -112,7 +112,7 @@ export async function getNotificationWithDeliveries(id: string) {
   });
 }
 
-async function dispatchDeliveries({
+export async function dispatchDeliveries({
   notification,
   devices,
   deliveries,
