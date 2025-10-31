@@ -5,14 +5,12 @@ Unity 2022.3+ 対応の Push 通知 SDK パッケージです。iOS/Android の�
 ## 構成
 
 ```
-unity-sdk/
-├── package.json                # Unity Package Manager 用メタデータ
-├── Runtime/
-│   ├── PushNotificationManager.cs
-│   ├── Networking/DeviceRegistrationClient.cs
-│   ├── Internal/* (iOS/Androidブリッジ、Coroutine runner)
-│   └── Models/NotificationPayload.cs
-└── Tests/Runtime/*.cs          # NUnitテスト (Unity Test Framework)
+Packages/
+└── com.akiojin.unity.push-notification/
+    ├── package.json           # Unity Package Manager 用メタデータ
+    ├── Runtime/               # ランタイムコード (C#)
+    ├── Editor/                # Unity Test Runner などのエディタ拡張
+    └── Tests/Runtime/         # NUnit テスト (Unity Test Framework)
 ```
 
 ## インストール
@@ -21,7 +19,7 @@ unity-sdk/
 2. `Packages/manifest.json` に以下を追加
 
 ```json
-"com.push.notification.sdk": "file:../unity-sdk"
+"com.akiojin.unity.push-notification": "file:../unity-sdk/push-notification/Packages/com.akiojin.unity.push-notification"
 ```
 
 3. プロジェクトに `com.unity.nuget.newtonsoft-json` 依存が追加されます

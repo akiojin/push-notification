@@ -1,8 +1,5 @@
-Library/
-Temp/
-Obj/
-Build/
-Logs/
-UserSettings/
-.idea/
-.DS_Store
+push-notification/*
+!push-notification/Packages/
+push-notification/Packages/*
+!push-notification/Packages/com.akiojin.unity.push-notification/
+!push-notification/Packages/com.akiojin.unity.push-notification/**
