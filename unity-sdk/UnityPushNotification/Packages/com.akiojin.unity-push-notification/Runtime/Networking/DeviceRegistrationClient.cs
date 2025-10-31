@@ -17,14 +17,14 @@ namespace PushNotification.SDK.Networking
         {
             // ReSharper disable once UnusedAutoPropertyAccessor.Local
             [JsonProperty("token")]
-            public string Token { get; init; }
+            public string Token { get; private set; }
 
             // ReSharper disable once UnusedAutoPropertyAccessor.Local
             [JsonProperty("platform")]
-            public string Platform { get; init; }
+            public string Platform { get; private set; }
 
             [JsonProperty("playerAccountId", NullValueHandling = NullValueHandling.Ignore)]
-            public string PlayerAccountId { get; init; }
+            public string PlayerAccountId { get; private set; }
 
             public TokenPayload(string token, string platform, string playerAccountId)
             {
