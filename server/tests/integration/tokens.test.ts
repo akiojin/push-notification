@@ -168,4 +168,20 @@ describe('tokens routes', () => {
     expect(response.statusCode).toBe(204);
     expect(mockedDelete).toHaveBeenCalledWith('missing');
   });
+
+  it('returns 401 when API key is missing', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/tokens/device-token'
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or missing API key'
+      }
+    });
+    expect(mockedFind).not.toHaveBeenCalled();
+  });
 });

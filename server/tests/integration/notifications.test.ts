@@ -162,4 +162,25 @@ describe('notifications routes', () => {
       },
     });
   });
+
+  it('returns 401 when API key is missing', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/notifications',
+      payload: {
+        title: 'Hello',
+        body: 'World',
+        tokens: ['abc']
+      }
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or missing API key'
+      }
+    });
+    expect(mockedCreate).not.toHaveBeenCalled();
+  });
 });
