@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <service
+            android:name="com.push.notificationsdk.messaging.InternalMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <receiver
+            android:name="com.push.notificationsdk.messaging.NotificationReceiver"
+            android:exported="false" />
+        <meta-data
+            android:name="com.push.notificationsdk.API_ENDPOINT"
+            android:value="https://api.example.com" />
+    </application>
+</manifest>
