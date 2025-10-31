@@ -30,6 +30,23 @@ npm run prisma:generate
 
 `.env` には API キーや配信リトライワーカーの設定を記載します（詳細は `server/.env.example` 参照）。CI では `.env.example` をベースに Secrets で上書きしてください。
 
+### CI Secrets
+
+GitHub Actions の `Server CI` ワークフローでは以下の Secrets を参照して `.env` を生成します。環境に合わせて設定してください。
+
+| Secret 名 | 説明 |
+| --- | --- |
+| `DATABASE_URL` | テスト用 PostgreSQL 接続文字列 (例: `postgresql://postgres:postgres@localhost:5432/push`) |
+| `API_KEY` | API 認証キー |
+| `RATE_LIMIT_MAX` | 任意。設定しない場合は `.env.example` の値を使用 |
+| `RATE_LIMIT_TIME_WINDOW` | 任意。設定しない場合は `.env.example` の値を使用 |
+| `DELIVERY_RETRY_INTERVAL_MS` | 任意。設定しない場合は `.env.example` の値を使用 |
+| `DELIVERY_RETRY_BATCH_SIZE` | 任意。設定しない場合は `.env.example` の値を使用 |
+| `APNS_KEY_ID` / `APNS_TEAM_ID` / `APNS_BUNDLE_ID` / `APNS_PRIVATE_KEY` | APNs 資格情報 (テスト環境で不要なら空のままで可) |
+| `FCM_CREDENTIALS` | FCM サービスアカウント JSON のパス、またはCIでの処理用にBase64化した文字列 |
+
+> Secrets を設定しない場合、`.env.example` に記載されたデフォルト値が使用されます。認証が必要な項目 (`API_KEY` など) は必ず Secrets として登録してください。
+
 ### 実行・テスト
 ```bash
 npm run dev         # ローカル開発 (tsx)
