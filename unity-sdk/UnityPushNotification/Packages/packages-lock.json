@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "com.akiojin.unity-push-notification": {
+      "version": "file:com.akiojin.unity-push-notification",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1"
+      }
+    }
+  }
+}
