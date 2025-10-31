@@ -1,6 +1,8 @@
 import Foundation
-import UIKit
 import UserNotifications
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public enum PushNotificationError: Error {
     case permissionsDenied
@@ -53,9 +55,11 @@ public final class PushNotificationSDK: NSObject {
                 return
             }
 
+#if canImport(UIKit)
             DispatchQueue.main.async {
                 UIApplication.shared.registerForRemoteNotifications()
             }
+#endif
         }
     }
 

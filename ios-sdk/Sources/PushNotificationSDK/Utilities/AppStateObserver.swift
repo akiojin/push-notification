@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 protocol AppStateObserving: AnyObject {
     func startObserving(_ sdk: PushNotificationSDK)
@@ -13,6 +15,7 @@ final class DefaultAppStateObserver: AppStateObserving {
     }
 
     func startObserving(_ sdk: PushNotificationSDK) {
+#if canImport(UIKit)
         notificationCenter.addObserver(
             forName: UIApplication.didBecomeActiveNotification,
             object: nil,
@@ -22,5 +25,8 @@ final class DefaultAppStateObserver: AppStateObserving {
                 sdk.delegate?.pushNotificationSDK(sdk, didReceiveNotification: response)
             }
         }
+#else
+        _ = sdk
+#endif
     }
 }
