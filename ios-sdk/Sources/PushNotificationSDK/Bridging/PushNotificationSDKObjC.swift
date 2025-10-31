@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import Foundation
 import UserNotifications
 
@@ -35,3 +36,4 @@ public final class PushNotificationSDKObjC: NSObject {
         sdk.consumePendingNotificationResponse()
     }
 }
+#endif
