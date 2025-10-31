@@ -1,5 +1,7 @@
 import 'dotenv/config';
 
+import { randomUUID } from 'node:crypto';
+
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
@@ -11,13 +13,24 @@ import { loadOpenApiDocument } from './config/openapi.js';
 import { getLoggerOptions } from './config/logger.js';
 import apiKeyAuth from './plugins/api-key-auth.js';
 import errorHandler from './plugins/error-handler.js';
+import loggerMiddleware from './middleware/logger.js';
 import notificationsRoutes from './routes/notifications.js';
 import tokensRoutes from './routes/tokens.js';
 import { buildErrorResponse } from './utils/errors.js';
 
 export async function buildServer() {
   const env = loadEnv();
-  const app = Fastify({ logger: getLoggerOptions() });
+  const app = Fastify({
+    logger: getLoggerOptions(),
+    genReqId: (req) => {
+      const headerId = req.headers['x-request-id'];
+      if (typeof headerId === 'string' && headerId.trim().length > 0) {
+        return headerId;
+      }
+      return randomUUID();
+    },
+    requestIdLogLabel: 'requestId',
+  });
 
   await app.register(cors, { origin: true });
 
@@ -55,6 +68,7 @@ export async function buildServer() {
     routePrefix: '/docs',
   });
 
+  await app.register(loggerMiddleware);
   await app.register(apiKeyAuth);
   await app.register(errorHandler);
   await app.register(tokensRoutes);

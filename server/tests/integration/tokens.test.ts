@@ -99,6 +99,7 @@ describe('tokens routes', () => {
     });
 
     expect(response.statusCode).toBe(200);
+    expect(response.headers).toHaveProperty('x-request-id');
     const body = response.json();
     expect(body).toHaveProperty('id', 'device-id');
     expect(body).toHaveProperty('deliveries');
@@ -188,5 +189,19 @@ describe('tokens routes', () => {
       }
     });
     expect(mockedFind).not.toHaveBeenCalled();
+  });
+
+  it('returns incoming request id in responses', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/tokens/device-token',
+      headers: {
+        'x-api-key': 'test-key',
+        'x-request-id': 'custom-token-request'
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers).toHaveProperty('x-request-id', 'custom-token-request');
   });
 });

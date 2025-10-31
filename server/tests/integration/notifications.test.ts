@@ -72,6 +72,7 @@ describe('notifications routes', () => {
     });
 
     expect(response.statusCode).toBe(200);
+    expect(response.headers).toHaveProperty('x-request-id');
     expect(mockedGet).toHaveBeenCalledWith('11111111-1111-1111-8111-111111111111');
     const body = response.json();
     expect(body).toHaveProperty('notificationId', '11111111-1111-1111-8111-111111111111');
@@ -212,5 +213,29 @@ describe('notifications routes', () => {
         message: 'Unexpected server error'
       }
     });
+  });
+
+  it('reuses provided x-request-id header', async () => {
+    mockedGet.mockResolvedValueOnce({
+      id: '11111111-1111-1111-8111-111111111111',
+      title: 'Hello',
+      body: 'World',
+      imageUrl: null,
+      customData: null,
+      createdAt: new Date('2025-01-01T00:00:00Z'),
+      deliveries: [],
+    } as never);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/notifications/11111111-1111-1111-8111-111111111111',
+      headers: {
+        'x-api-key': 'test-key',
+        'x-request-id': 'custom-request-id'
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers).toHaveProperty('x-request-id', 'custom-request-id');
   });
 });
