@@ -20,13 +20,12 @@ jobs:
 
       - name: Build and test Swift package (iOS Simulator)
         working-directory: ios-sdk
-        env:
-          SCHEME: PushNotificationSDK-Package
         run: |
           set -eo pipefail
+          swift package generate-xcodeproj
           xcodebuild \
-            -scheme "$SCHEME" \
+            -project PushNotificationSDK.xcodeproj \
+            -scheme PushNotificationSDK \
             -destination 'platform=iOS Simulator,name=iPhone 15' \
-            -package-path . \
             -skipPackagePluginValidation \
             test
