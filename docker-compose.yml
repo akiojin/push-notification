@@ -17,6 +17,9 @@ services:
       - GITHUB_PERSONAL_ACCESS_TOKEN
       - GITHUB_USERNAME
       - GIT_USER_EMAIL
+      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+      - ANDROID_HOME=/opt/android-sdk
       - UNITY_HOST=host.docker.internal
       - UNITY_PORT=6400
       # bash_history

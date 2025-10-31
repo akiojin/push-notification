@@ -1,6 +1,8 @@
+#if canImport(UIKit)
 import Foundation
 import UserNotifications
 
+@MainActor
 @objc(PNPushNotificationSDK)
 public final class PushNotificationSDKObjC: NSObject {
     private let sdk = PushNotificationSDK.shared
@@ -34,3 +36,4 @@ public final class PushNotificationSDKObjC: NSObject {
         sdk.consumePendingNotificationResponse()
     }
 }
+#endif
