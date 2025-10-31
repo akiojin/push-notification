@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Device {
+  id              String   @id @default(uuid())
+  token           String   @unique
+  platform        Platform
+  playerAccountId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  notifications   DeliveryLog[]
+}
+
+model Notification {
+  id         String       @id @default(uuid())
+  title      String
+  body       String
+  imageUrl   String?
+  customData Json?
+  createdAt  DateTime     @default(now())
+  deliveries DeliveryLog[]
+}
+
+model DeliveryLog {
+  id             String       @id @default(uuid())
+  notification   Notification @relation(fields: [notificationId], references: [id])
+  notificationId String
+  device         Device       @relation(fields: [deviceId], references: [id])
+  deviceId       String
+  status         DeliveryStatus
+  errorCode      String?
+  errorMessage   String?
+  deliveredAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+enum Platform {
+  IOS
+  ANDROID
+}
+
+enum DeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
