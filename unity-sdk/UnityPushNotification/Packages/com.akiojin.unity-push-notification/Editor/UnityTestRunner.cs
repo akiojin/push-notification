@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEditor.TestTools.TestRunner.Api;
+using UnityEngine;
 
 namespace PushNotification.SDK.Editor
 {
