@@ -7,3 +7,5 @@
 - [x] 設定変更をコミットしてプッシュする
 - [x] `JSONObject` の未モック例外を解消するためのテスト依存関係を追加する
 - [x] Android 単体テストがローカルで成功することを確認する
+- [x] Docker イメージに Java 17 と Android SDK を組み込む
+- [x] docker-compose で Android SDK 関連の環境変数を公開する
