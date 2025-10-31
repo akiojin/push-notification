@@ -14,7 +14,20 @@ TypeScript/Fastify ベースのバックエンド API。デバイストークン
 cp .env.example .env
 npm install
 npm run prisma:generate
+docker compose up -d db   # ローカル PostgreSQL を起動
 ```
+
+### マイグレーション
+
+```bash
+# 初期化（DBが空の場合）
+npx prisma migrate deploy
+
+# スキーマ変更を開発中に適用
+npm run prisma:migrate
+```
+
+> `docker compose down -v` でローカルの `pgdata` ボリュームを削除すると、DB をリセットできます。
 
 ## 開発コマンド
 

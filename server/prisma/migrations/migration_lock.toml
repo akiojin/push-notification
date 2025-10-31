@@ -1,0 +1,2 @@
+# This file ensures that shadow database and migrations target use the same provider
+provider = "postgresql"
