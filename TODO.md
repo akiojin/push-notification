@@ -1,5 +1,5 @@
 - [x] Android CI の `DeviceTokenRegistrarTest` が失敗する原因を特定する
 - [x] テスト用 `Call.Factory` を安定してリクエストを記録できる形に改善する
-- [ ] 必要に応じて `DeviceTokenRegistrar` 実装も併せて調整する
+- [x] 必要に応じて `DeviceTokenRegistrar` 実装も併せて調整する（今回は変更不要と判断）
 - [ ] 修正後の動作確認（ローカルまたはロジックでの検証）を行う
-- [ ] 変更内容をコミットしてプッシュする
+- [x] 変更内容をコミットしてプッシュする
