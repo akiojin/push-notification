@@ -44,4 +44,4 @@ class App : Application() {
 ./gradlew :android-sdk:test
 ```
 
-テストではトークン登録の前提条件チェックとネットワーク呼び出しのモックを検証します。CI では Android SDK/Gradle のセットアップが必要です。
+同梱の Gradle Wrapper (`./gradlew`) を利用するため、追加の Gradle インストールは不要です。テストではトークン登録の前提条件チェックとネットワーク呼び出しのモックを検証します。CI では Android SDK/NDK のセットアップが必要です。
