@@ -7,7 +7,7 @@ import { sendApnsNotification } from './apns.js';
 import { NotificationConfigurationError, NotificationProviderError } from './errors.js';
 import { sendFcmNotification } from './fcm.js';
 
-const MAX_ATTEMPTS = 3;
+export const MAX_DELIVERY_ATTEMPTS = 3;
 const INITIAL_BACKOFF_MS = 50;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -136,7 +136,7 @@ export async function dispatchDeliveries({
       }
 
       let attempt = 0;
-      while (attempt < MAX_ATTEMPTS) {
+      while (attempt < MAX_DELIVERY_ATTEMPTS) {
         const attemptStartedAt = new Date();
         try {
           if (device.platform === Platform.IOS) {
@@ -171,7 +171,7 @@ export async function dispatchDeliveries({
           return;
         } catch (error) {
           attempt += 1;
-          const isLastAttempt = attempt >= MAX_ATTEMPTS;
+          const isLastAttempt = attempt >= MAX_DELIVERY_ATTEMPTS;
           const message = error instanceof Error ? error.message : String(error);
           const code =
             error instanceof NotificationProviderError || error instanceof NotificationConfigurationError

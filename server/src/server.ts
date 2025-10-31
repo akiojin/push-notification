@@ -14,6 +14,7 @@ import { getLoggerOptions } from './config/logger.js';
 import apiKeyAuth from './plugins/api-key-auth.js';
 import errorHandler from './plugins/error-handler.js';
 import loggerMiddleware from './middleware/logger.js';
+import { startDeliveryRetryWorker, stopDeliveryRetryWorker } from './jobs/delivery-retry.js';
 import notificationsRoutes from './routes/notifications.js';
 import tokensRoutes from './routes/tokens.js';
 import { buildErrorResponse } from './utils/errors.js';
@@ -75,6 +76,13 @@ export async function buildServer() {
   await app.register(notificationsRoutes);
 
   app.get('/healthz', () => ({ status: 'ok' }));
+
+  if (env.NODE_ENV !== 'test') {
+    startDeliveryRetryWorker(app.log);
+    app.addHook('onClose', async () => {
+      stopDeliveryRetryWorker();
+    });
+  }
 
   return { app, port: Number(env.PORT) } as const;
 }
