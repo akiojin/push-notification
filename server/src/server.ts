@@ -9,17 +9,39 @@ import Fastify from 'fastify';
 import { loadEnv } from './config/env.js';
 import { getLoggerOptions } from './config/logger.js';
 import apiKeyAuth from './plugins/api-key-auth.js';
+import errorHandler from './plugins/error-handler.js';
 import notificationsRoutes from './routes/notifications.js';
 import tokensRoutes from './routes/tokens.js';
+import { buildErrorResponse } from './utils/errors.js';
 
 export async function buildServer() {
   const env = loadEnv();
   const app = Fastify({ logger: getLoggerOptions() });
 
   await app.register(cors, { origin: true });
+
+  const rateLimitMax = env.RATE_LIMIT_MAX ? Number(env.RATE_LIMIT_MAX) : 100;
+  const rateLimitTimeWindow = env.RATE_LIMIT_TIME_WINDOW ?? '1 minute';
+
   await app.register(rateLimit, {
-    max: 100,
-    timeWindow: '1 minute',
+    max: Number.isFinite(rateLimitMax) && rateLimitMax > 0 ? rateLimitMax : 100,
+    timeWindow: rateLimitTimeWindow,
+    errorResponseBuilder: (_request, context) => {
+      const rawRetryAfter = context.after;
+      const retryAfterSeconds = Number(rawRetryAfter);
+      const retryAfterValue = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0 ? retryAfterSeconds : rawRetryAfter;
+      const hasRetryAfter = retryAfterValue !== undefined && retryAfterValue !== null;
+      const message = hasRetryAfter
+        ? `Rate limit exceeded. Please retry after ${retryAfterValue} ${typeof retryAfterValue === 'number' ? 'seconds' : ''}`.trim()
+        : 'Rate limit exceeded. Please retry later';
+
+      return {
+        statusCode: 429,
+        ...buildErrorResponse('RATE_LIMIT_EXCEEDED', message, {
+          ...(hasRetryAfter ? { retryAfter: retryAfterValue } : {}),
+        }),
+      };
+    },
   });
 
   await app.register(swagger, {
@@ -36,6 +58,7 @@ export async function buildServer() {
   });
 
   await app.register(apiKeyAuth);
+  await app.register(errorHandler);
   await app.register(tokensRoutes);
   await app.register(notificationsRoutes);
 

@@ -11,6 +11,11 @@ const envSchema = z.object({
   APNS_PRIVATE_KEY: z.string().optional(),
   FCM_CREDENTIALS: z.string().optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+  RATE_LIMIT_MAX: z
+    .string()
+    .regex(/^\d+$/)
+    .optional(),
+  RATE_LIMIT_TIME_WINDOW: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

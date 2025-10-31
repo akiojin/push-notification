@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetEnvCache } from '../../src/config/env.js';
+
 vi.mock('../../src/lib/device/index.js', () => ({
   upsertDevice: vi.fn(async (input: { token: string; platform: string; playerAccountId?: string }) => ({
     id: 'device-id',
@@ -68,6 +70,8 @@ describe('tokens routes', () => {
     process.env.API_KEY = 'test-key';
     process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
 
+    resetEnvCache();
+
     const built = await buildServer();
     app = built.app;
   });
@@ -75,6 +79,7 @@ describe('tokens routes', () => {
   afterAll(async () => {
     await app.close();
     process.env = originalEnv;
+    resetEnvCache();
   });
 
   beforeEach(() => {

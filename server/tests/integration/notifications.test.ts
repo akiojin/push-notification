@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetEnvCache } from '../../src/config/env.js';
+
 vi.mock('../../src/lib/notification/index.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/lib/notification/index.js')>();
   return {
@@ -24,6 +26,8 @@ describe('notifications routes', () => {
     process.env.API_KEY = 'test-key';
     process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
 
+    resetEnvCache();
+
     const built = await buildServer();
     app = built.app;
   });
@@ -31,6 +35,7 @@ describe('notifications routes', () => {
   afterAll(async () => {
     await app.close();
     process.env = originalEnv;
+    resetEnvCache();
   });
 
   beforeEach(() => {
@@ -182,5 +187,30 @@ describe('notifications routes', () => {
       }
     });
     expect(mockedCreate).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when notification creation fails unexpectedly', async () => {
+    mockedCreate.mockRejectedValueOnce(new Error('Database unavailable'));
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/v1/notifications',
+      headers: {
+        'x-api-key': 'test-key'
+      },
+      payload: {
+        title: 'Hello',
+        body: 'World',
+        tokens: ['abc']
+      }
+    });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Unexpected server error'
+      }
+    });
   });
 });
