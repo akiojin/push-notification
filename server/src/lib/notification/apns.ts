@@ -66,14 +66,14 @@ export async function sendApnsNotification(payload: ApnsPayload) {
     if (result.failed.length > 0) {
       const failure = result.failed[0];
       const reason = failure.response?.reason ?? failure.error?.message ?? 'APNS_SEND_FAILED';
-      throw new NotificationProviderError(`APNs delivery failed: ${reason}`, failure.response?.reason);
+      throw new NotificationProviderError(`APNs delivery failed: ${reason}`, reason, failure.device ?? payload.token);
     }
   } catch (error) {
     if (error instanceof NotificationProviderError) {
       throw error;
     }
     const message = error instanceof Error ? error.message : String(error);
-    throw new NotificationProviderError(`APNs send error: ${message}`);
+    throw new NotificationProviderError(`APNs send error: ${message}`, undefined, payload.token);
   }
 }
 

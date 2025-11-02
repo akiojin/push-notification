@@ -54,8 +54,10 @@ export async function sendFcmNotification(payload: FcmPayload) {
     if (error instanceof NotificationProviderError || error instanceof NotificationConfigurationError) {
       throw error;
     }
+    const firebaseCode = (error as { code?: string; errorInfo?: { code?: string } }).code ??
+      (error as { errorInfo?: { code?: string } }).errorInfo?.code;
     const message = error instanceof Error ? error.message : String(error);
-    throw new NotificationProviderError(`FCM send error: ${message}`);
+    throw new NotificationProviderError(`FCM send error: ${message}`, firebaseCode, payload.token);
   }
 }
 

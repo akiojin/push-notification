@@ -3,12 +3,23 @@ import { z } from 'zod';
 
 import { prisma } from '../prisma.js';
 import { updateDeliveryStatus } from '../delivery/index.js';
+import { deleteDevice } from '../device/index.js';
 import { sendApnsNotification } from './apns.js';
 import { NotificationConfigurationError, NotificationProviderError } from './errors.js';
 import { sendFcmNotification } from './fcm.js';
 
 export const MAX_DELIVERY_ATTEMPTS = 3;
 const INITIAL_BACKOFF_MS = 50;
+const INVALID_TOKEN_CODES = new Set([
+  'Unregistered',
+  'BadDeviceToken',
+  'DeviceTokenNotForTopic',
+  'MissingDeviceToken',
+  'APNS_SEND_FAILED',
+  'APNS_INVALID_TOKEN',
+  'messaging/invalid-registration-token',
+  'messaging/registration-token-not-registered',
+]);
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -172,16 +183,16 @@ export async function dispatchDeliveries({
         } catch (error) {
           attempt += 1;
           const isLastAttempt = attempt >= MAX_DELIVERY_ATTEMPTS;
-          const message = error instanceof Error ? error.message : String(error);
-          const code =
-            error instanceof NotificationProviderError || error instanceof NotificationConfigurationError
-              ? error.code
-              : undefined;
-          const backoff = INITIAL_BACKOFF_MS * 2 ** (attempt - 1);
+        const message = error instanceof Error ? error.message : String(error);
+        const code =
+          error instanceof NotificationProviderError || error instanceof NotificationConfigurationError
+            ? error.code
+            : undefined;
+        const backoff = INITIAL_BACKOFF_MS * 2 ** (attempt - 1);
 
-          await updateDeliveryStatus({
-            deliveryId: delivery.id,
-            status: isLastAttempt ? DeliveryStatus.FAILED : DeliveryStatus.PENDING,
+        await updateDeliveryStatus({
+          deliveryId: delivery.id,
+          status: isLastAttempt ? DeliveryStatus.FAILED : DeliveryStatus.PENDING,
             errorCode: code ?? 'DELIVERY_FAILED',
             errorMessage: message,
             retryCount: attempt,
@@ -191,6 +202,16 @@ export async function dispatchDeliveries({
           });
 
           if (isLastAttempt) {
+            if (code && INVALID_TOKEN_CODES.has(code)) {
+              try {
+                await deleteDevice(device.token);
+              } catch (deleteError) {
+                // device might already be deleted; log and continue
+                if (deleteError instanceof Error) {
+                  console.warn(`Failed to delete device token ${device.token}: ${deleteError.message}`);
+                }
+              }
+            }
             return;
           }
 
