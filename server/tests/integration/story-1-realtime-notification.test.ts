@@ -20,7 +20,7 @@ vi.mock('../../src/lib/notification/index.js', async (importOriginal) => {
   return {
     ...actual,
     createNotification: vi.fn(async (payload) => ({
-      notificationId: 'notif-story-1',
+      notificationId: '2f8585f4-3a92-4b6c-8e62-4aa8bdc51c60',
       deliveryLogs: payload.tokens.map((token) => ({
         deviceId: `device-${token}`,
         status: 'PENDING',
@@ -37,7 +37,7 @@ import { createNotification } from '../../src/lib/notification/index.js';
 const mockedUpsert = vi.mocked(upsertDevice);
 const mockedCreateNotification = vi.mocked(createNotification);
 
-describe.skip('story-1 realtime notification', () => {
+describe('story-1 realtime notification', () => {
   const originalEnv = { ...process.env };
   let app: Awaited<ReturnType<typeof buildServer>>['app'];
 
@@ -102,7 +102,7 @@ describe.skip('story-1 realtime notification', () => {
 
     expect(notificationResponse.statusCode).toBe(202);
     expect(notificationResponse.json()).toEqual({
-      notificationId: 'notif-story-1',
+      notificationId: '2f8585f4-3a92-4b6c-8e62-4aa8bdc51c60',
       deliveryLogs: [
         { deviceId: 'device-ios-token', status: 'PENDING' },
         { deviceId: 'device-android-token', status: 'PENDING' },
