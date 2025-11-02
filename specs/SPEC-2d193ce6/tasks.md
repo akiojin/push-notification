@@ -82,7 +82,7 @@
 - [ ] **T038** `src/lib/notification/fcm.ts` に無効トークン検出処理（FCM InvalidRegistration → Device削除）
 
 ### Testcontainers統合テスト環境
-- [ ] **T039** [P] `tests/setup/testcontainers.ts` にTestcontainers PostgreSQL設定（テスト用DB自動起動）
+- [x] **T039** [P] `tests/setup/testcontainers.ts` にTestcontainers PostgreSQL設定（テスト用DB自動起動）
 - [ ] **T040** [P] `tests/setup/apns-mock.ts` にAPNs Sandboxモックサーバー設定（テスト用）
 - [ ] **T041** [P] `tests/setup/fcm-mock.ts` にFCM Sandboxモックサーバー設定（テスト用）
 
