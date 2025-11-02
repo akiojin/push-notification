@@ -41,8 +41,8 @@
 
 ### Integration Tests（ユーザーストーリーベース）
 - [ ] **T013** [P] `tests/integration/story-1-realtime-notification.test.ts` にストーリー1の統合テスト（単一/複数デバイス通知、画像/カスタムデータ）
-- [ ] **T014** [P] `tests/integration/story-2-device-lifecycle.test.ts` にストーリー2の統合テスト（登録/更新/削除/複数デバイス）
-- [ ] **T015** [P] `tests/integration/story-3-delivery-status.test.ts` にストーリー3の統合テスト（配信状況確認、エラー詳細、統計情報）
+- [x] **T014** [P] `tests/integration/story-2-device-lifecycle.test.ts` にストーリー2の統合テスト（登録/更新/削除/複数デバイス）
+- [x] **T015** [P] `tests/integration/story-3-delivery-status.test.ts` にストーリー3の統合テスト（配信状況確認、エラー詳細、統計情報）
 
 ## Phase 3.3: コア実装（テストが失敗した後のみ）
 
@@ -91,8 +91,8 @@
 
 ### Integration Tests検証（GREEN フェーズ）
 - [ ] **T043** T013の統合テスト（ストーリー1）が合格することを確認（リアルタイム通知送信）
-- [ ] **T044** T014の統合テスト（ストーリー2）が合格することを確認（デバイスライフサイクル）
-- [ ] **T045** T015の統合テスト（ストーリー3）が合格することを確認（配信状況確認）
+- [x] **T044** T014の統合テスト（ストーリー2）が合格することを確認（デバイスライフサイクル）
+- [x] **T045** T015の統合テスト（ストーリー3）が合格することを確認（配信状況確認）
 
 ## Phase 3.5: 仕上げ
 
