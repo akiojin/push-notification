@@ -5,6 +5,7 @@ let container: StartedPostgreSqlContainer | undefined;
 
 beforeAll(async () => {
   if (process.env.DATABASE_URL) {
+    process.env.API_KEY = process.env.API_KEY ?? 'test-key';
     return;
   }
 
@@ -12,7 +13,6 @@ beforeAll(async () => {
     container = await new PostgreSqlContainer().start();
     process.env.DATABASE_URL = container.getConnectionUri();
   } catch (error) {
-    // Dockerが利用できない環境ではTestcontainersをスキップする
     console.warn('Testcontainers PostgreSQL was not started:', error);
   } finally {
     process.env.API_KEY = process.env.API_KEY ?? 'test-key';
