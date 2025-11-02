@@ -22,6 +22,12 @@ function getProvider() {
       teamId: env.APNS_TEAM_ID,
     },
     production: env.NODE_ENV === 'production',
+    ...(process.env.APNS_MOCK_URL
+      ? (() => {
+          const url = new URL(process.env.APNS_MOCK_URL);
+          return { address: url.hostname, port: Number(url.port) || 443, rejectUnauthorized: false };
+        })()
+      : {}),
   });
   return provider;
 }

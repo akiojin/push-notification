@@ -9,12 +9,19 @@ import { NotificationConfigurationError, NotificationProviderError } from './err
 
 let firebaseApp: App | null = null;
 
+function getMessagingBaseUrl() {
+  const env = loadEnv();
+  const baseUrl = process.env.FCM_MOCK_URL;
+  return baseUrl ?? 'https://fcm.googleapis.com';
+}
+
 function ensureFirebaseApp() {
   if (firebaseApp) {
     return firebaseApp;
   }
 
   const env = loadEnv();
+  const mockUrl = process.env.FCM_MOCK_URL;
   if (!env.FCM_CREDENTIALS) {
     throw new NotificationConfigurationError('Missing FCM configuration');
   }
@@ -22,8 +29,15 @@ function ensureFirebaseApp() {
   const credentialsPath = path.resolve(env.FCM_CREDENTIALS);
   const credentialsJson = JSON.parse(readFileSync(credentialsPath, 'utf8'));
 
+  if (mockUrl) {
+    const emulatorHost = new URL(mockUrl).host;
+    process.env.FIREBASE_EMULATOR_HOST = emulatorHost;
+    process.env.FIREBASE_EMULATOR_ORIGIN = mockUrl;
+  }
+
   firebaseApp = initializeApp({
     credential: cert(credentialsJson),
+    projectId: credentialsJson.project_id,
   });
   return firebaseApp;
 }
@@ -49,7 +63,15 @@ export async function sendFcmNotification(payload: FcmPayload) {
         imageUrl: payload.imageUrl ?? undefined,
       },
       data: payload.customData ? Object.fromEntries(Object.entries(payload.customData).map(([key, value]) => [key, String(value)])) : undefined,
-    });
+    },
+    // options
+    process.env.FCM_MOCK_URL
+      ? {
+          // Workaround: firebase-admin SDK doesn't expose direct base URL override.
+          // Instead, we temporarily set emulator host via environment variable.
+          // This block is left empty because the actual override uses env var below.
+        }
+      : undefined);
   } catch (error) {
     if (error instanceof NotificationProviderError || error instanceof NotificationConfigurationError) {
       throw error;
