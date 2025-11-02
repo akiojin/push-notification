@@ -8,9 +8,15 @@ beforeAll(async () => {
     return;
   }
 
-  container = await new PostgreSqlContainer().start();
-  process.env.DATABASE_URL = container.getConnectionUri();
-  process.env.API_KEY = process.env.API_KEY ?? 'test-key';
+  try {
+    container = await new PostgreSqlContainer().start();
+    process.env.DATABASE_URL = container.getConnectionUri();
+  } catch (error) {
+    // Dockerが利用できない環境ではTestcontainersをスキップする
+    console.warn('Testcontainers PostgreSQL was not started:', error);
+  } finally {
+    process.env.API_KEY = process.env.API_KEY ?? 'test-key';
+  }
 });
 
 afterAll(async () => {

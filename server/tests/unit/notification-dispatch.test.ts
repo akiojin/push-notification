@@ -14,10 +14,15 @@ vi.mock('../../src/lib/delivery/index.js', () => ({
   updateDeliveryStatus: vi.fn(),
 }));
 
+vi.mock('../../src/lib/device/index.js', () => ({
+  deleteDevice: vi.fn(),
+}));
+
 const { dispatchDeliveries } = await import('../../src/lib/notification/index.js');
 const { sendApnsNotification } = await import('../../src/lib/notification/apns.js');
 const { sendFcmNotification } = await import('../../src/lib/notification/fcm.js');
 const { updateDeliveryStatus } = await import('../../src/lib/delivery/index.js');
+const { deleteDevice } = await import('../../src/lib/device/index.js');
 const { NotificationProviderError } = await import('../../src/lib/notification/errors.js');
 
 describe('dispatchDeliveries', () => {
@@ -25,6 +30,7 @@ describe('dispatchDeliveries', () => {
     vi.mocked(sendApnsNotification).mockReset();
     vi.mocked(sendFcmNotification).mockReset();
     vi.mocked(updateDeliveryStatus).mockReset();
+    vi.mocked(deleteDevice).mockReset();
   });
 
   it('sends notifications to each platform and marks success', async () => {
@@ -93,10 +99,12 @@ describe('dispatchDeliveries', () => {
     });
     expect(secondCallArgs?.lastAttemptAt).toBeInstanceOf(Date);
     expect(secondCallArgs?.deliveredAt).toBeInstanceOf(Date);
+
+    expect(deleteDevice).not.toHaveBeenCalled();
   });
 
   it('records failure details when provider throws error', async () => {
-    vi.mocked(sendApnsNotification).mockRejectedValue(new NotificationProviderError('boom', 'APNS_ERROR'));
+    vi.mocked(sendApnsNotification).mockRejectedValue(new NotificationProviderError('boom', 'Unregistered', 'apns-token'));
 
     await dispatchDeliveries({
       notification: {
@@ -121,12 +129,14 @@ describe('dispatchDeliveries', () => {
     expect(lastCall).toMatchObject({
       deliveryId: 'delivery-ios',
       status: 'FAILED',
-      errorCode: 'APNS_ERROR',
+      errorCode: 'Unregistered',
       errorMessage: 'boom',
       retryCount: 3,
       nextAttemptAt: null,
     });
     expect(lastCall?.lastAttemptAt).toBeInstanceOf(Date);
     expect(lastCall?.lastErrorAt).toBeInstanceOf(Date);
+
+    expect(deleteDevice).toHaveBeenCalledWith('apns-token');
   });
 });
