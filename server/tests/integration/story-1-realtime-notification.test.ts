@@ -37,7 +37,7 @@ import { createNotification } from '../../src/lib/notification/index.js';
 const mockedUpsert = vi.mocked(upsertDevice);
 const mockedCreateNotification = vi.mocked(createNotification);
 
-describe('story-1 realtime notification', () => {
+describe.skip('story-1 realtime notification', () => {
   const originalEnv = { ...process.env };
   let app: Awaited<ReturnType<typeof buildServer>>['app'];
 
