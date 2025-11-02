@@ -12,6 +12,16 @@ vi.mock('../../src/lib/device/index.js', () => ({
     createdAt: new Date('2025-01-01T00:00:00Z'),
     updatedAt: new Date('2025-01-02T00:00:00Z')
   })),
+  updateDevice: vi.fn(async (_token: string, updates: { token?: string; platform?: string; playerAccountId?: string | null }) => ({
+    id: 'device-id',
+    token: updates.token ?? 'device-token',
+    platform: (updates.platform ?? 'IOS') as 'IOS' | 'ANDROID',
+    playerAccountId: Object.prototype.hasOwnProperty.call(updates, 'playerAccountId')
+      ? updates.playerAccountId ?? null
+      : 'player-1',
+    createdAt: new Date('2025-01-01T00:00:00Z'),
+    updatedAt: new Date('2025-01-02T00:00:01Z')
+  })),
   deleteDevice: vi.fn(async () => undefined),
   findDeviceByToken: vi.fn(async (token: string) =>
     token === 'missing'
@@ -53,10 +63,12 @@ import {
   deleteDevice,
   findDeviceByToken,
   listNotificationsByDevice,
+  updateDevice,
   upsertDevice
 } from '../../src/lib/device/index.js';
 
 const mockedUpsert = vi.mocked(upsertDevice);
+const mockedUpdate = vi.mocked(updateDevice);
 const mockedDelete = vi.mocked(deleteDevice);
 const mockedFind = vi.mocked(findDeviceByToken);
 const mockedList = vi.mocked(listNotificationsByDevice);
@@ -84,6 +96,7 @@ describe('tokens routes', () => {
 
   beforeEach(() => {
     mockedUpsert.mockClear();
+    mockedUpdate.mockClear();
     mockedDelete.mockClear();
     mockedFind.mockClear();
     mockedList.mockClear();
@@ -151,6 +164,34 @@ describe('tokens routes', () => {
       playerAccountId: null,
       createdAt: new Date('2025-01-01T00:00:00Z').toISOString(),
       updatedAt: new Date('2025-01-02T00:00:00Z').toISOString()
+    });
+  });
+
+  it('updates a device token via PUT', async () => {
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/api/v1/tokens/device-token',
+      headers: {
+        'x-api-key': 'test-key'
+      },
+      payload: {
+        token: 'rotated-token',
+        playerAccountId: null
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mockedUpdate).toHaveBeenCalledWith('device-token', {
+      token: 'rotated-token',
+      playerAccountId: null
+    });
+    expect(response.json()).toEqual({
+      id: 'device-id',
+      token: 'rotated-token',
+      platform: 'IOS',
+      playerAccountId: null,
+      createdAt: new Date('2025-01-01T00:00:00Z').toISOString(),
+      updatedAt: new Date('2025-01-02T00:00:01Z').toISOString()
     });
   });
 

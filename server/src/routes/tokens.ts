@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
-import { deleteDevice, findDeviceByToken, listNotificationsByDevice, upsertDevice } from '../lib/device/index.js';
+import { deleteDevice, findDeviceByToken, listNotificationsByDevice, updateDevice, upsertDevice } from '../lib/device/index.js';
 import { buildErrorResponse, buildValidationError, zodErrorToDetails } from '../utils/errors.js';
 
 const registerBody = z.object({
@@ -11,6 +11,22 @@ const registerBody = z.object({
 });
 
 const tokenParamsSchema = z.object({ token: z.string().min(1) });
+const updateBodySchema = z
+  .object({
+    token: z.string().min(1).optional(),
+    platform: z.enum(['IOS', 'ANDROID']).optional(),
+    playerAccountId: z.string().min(1).nullable().optional(),
+  })
+  .refine(
+    (data) =>
+      data.token !== undefined ||
+      data.platform !== undefined ||
+      Object.prototype.hasOwnProperty.call(data, 'playerAccountId'),
+    {
+      message: 'At least one field must be provided',
+      path: [],
+    },
+  );
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const tokensRoutes: FastifyPluginAsync = async (fastify) => {
@@ -71,6 +87,47 @@ const tokensRoutes: FastifyPluginAsync = async (fastify) => {
       createdAt: device.createdAt.toISOString(),
       updatedAt: device.updatedAt.toISOString(),
     });
+  });
+
+  fastify.put('/api/v1/tokens/:token', async (request, reply) => {
+    const parsedParams = tokenParamsSchema.safeParse(request.params);
+    if (!parsedParams.success) {
+      reply.code(400).send(buildValidationError(zodErrorToDetails(parsedParams.error)));
+      return;
+    }
+
+    const parsedBody = updateBodySchema.safeParse(request.body);
+    if (!parsedBody.success) {
+      reply.code(400).send(buildValidationError(zodErrorToDetails(parsedBody.error)));
+      return;
+    }
+
+    const { token } = parsedParams.data;
+    const payload = parsedBody.data;
+
+    try {
+      const updated = await updateDevice(token, payload);
+
+      reply.send({
+        id: updated.id,
+        token: updated.token,
+        platform: updated.platform,
+        playerAccountId: updated.playerAccountId,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      });
+    } catch (error) {
+      const maybeError = error as { code?: string; name?: string; message?: string } | undefined;
+      if (maybeError?.code === 'P2025' || maybeError?.name === 'PrismaClientKnownRequestError') {
+        reply.code(404).send(buildErrorResponse('NOT_FOUND', 'Token not found'));
+        return;
+      }
+      if (maybeError?.code === 'P2002') {
+        reply.code(409).send(buildErrorResponse('TOKEN_CONFLICT', 'Device token already exists'));
+        return;
+      }
+      throw error;
+    }
   });
 
   fastify.delete('/api/v1/tokens/:token', async (request, reply) => {

@@ -34,7 +34,7 @@
 
 ### Contract Tests（OpenAPI仕様準拠）
 - [ ] **T008** [P] `tests/contract/tokens-post.test.ts` に POST /api/v1/tokens の契約テスト（リクエスト/レスポンススキーマ検証）
-- [ ] **T009** [P] `tests/contract/tokens-put.test.ts` に PUT /api/v1/tokens/{token} の契約テスト
+- [x] **T009** [P] `tests/contract/tokens-put.test.ts` に PUT /api/v1/tokens/{token} の契約テスト
 - [ ] **T010** [P] `tests/contract/tokens-delete.test.ts` に DELETE /api/v1/tokens/{token} の契約テスト
 - [ ] **T011** [P] `tests/contract/notifications-post.test.ts` に POST /api/v1/notifications の契約テスト
 - [ ] **T012** [P] `tests/contract/notifications-get.test.ts` に GET /api/v1/notifications/{id} の契約テスト
@@ -67,7 +67,7 @@
 
 ### API Routes実装
 - [ ] **T029** `src/routes/tokens.ts` に POST /api/v1/tokens エンドポイント（デバイストークン登録、upsert処理）
-- [ ] **T030** `src/routes/tokens.ts` に PUT /api/v1/tokens/{token} エンドポイント（デバイストークン更新）
+- [x] **T030** `src/routes/tokens.ts` に PUT /api/v1/tokens/{token} エンドポイント（デバイストークン更新）
 - [ ] **T031** `src/routes/tokens.ts` に DELETE /api/v1/tokens/{token} エンドポイント（デバイストークン削除）
 - [ ] **T032** `src/routes/notifications.ts` に POST /api/v1/notifications エンドポイント（通知送信、バッチ処理）
 - [ ] **T033** `src/routes/notifications.ts` に GET /api/v1/notifications/{id} エンドポイント（配信状況取得）

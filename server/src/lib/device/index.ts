@@ -46,3 +46,36 @@ export async function listNotificationsByDevice(deviceId: string) {
     orderBy: { createdAt: 'desc' },
   });
 }
+
+const deviceUpdateSchema = z
+  .object({
+    token: z.string().min(1).optional(),
+    platform: z.nativeEnum(Platform).optional(),
+    playerAccountId: z.string().min(1).nullable().optional(),
+  })
+  .refine(
+    (data) =>
+      data.token !== undefined ||
+      data.platform !== undefined ||
+      Object.prototype.hasOwnProperty.call(data, 'playerAccountId'),
+    {
+      message: 'At least one field must be provided',
+    },
+  );
+
+export type DeviceUpdateInput = z.infer<typeof deviceUpdateSchema>;
+
+export async function updateDevice(existingToken: string, input: DeviceUpdateInput) {
+  const data = deviceUpdateSchema.parse(input);
+
+  return prisma.device.update({
+    where: { token: existingToken },
+    data: {
+      ...(data.token !== undefined ? { token: data.token } : {}),
+      ...(data.platform !== undefined ? { platform: data.platform } : {}),
+      ...(Object.prototype.hasOwnProperty.call(data, 'playerAccountId')
+        ? { playerAccountId: data.playerAccountId ?? null }
+        : {}),
+    },
+  });
+}

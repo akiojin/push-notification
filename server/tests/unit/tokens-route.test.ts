@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/lib/device/index.js', () => ({
   upsertDevice: vi.fn(),
+  updateDevice: vi.fn(),
   deleteDevice: vi.fn(),
   findDeviceByToken: vi.fn(),
   listNotificationsByDevice: vi.fn(),
