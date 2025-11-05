@@ -29,10 +29,7 @@ RUN npm i -g \
     bun@latest \
     typescript@latest \
     eslint@latest \
-    prettier@latest \
-    @anthropic-ai/claude-code@latest \
-    @openai/codex@latest \
-    @google/gemini-cli@latest
+    prettier@latest
 
 WORKDIR /push-notification
 # Use bash to invoke entrypoint to avoid exec-bit and CRLF issues on Windows mounts
