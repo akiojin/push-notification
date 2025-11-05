@@ -1,6 +1,8 @@
 import Foundation
-import UIKit
 import UserNotifications
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public enum PushNotificationError: Error {
     case permissionsDenied
@@ -8,6 +10,7 @@ public enum PushNotificationError: Error {
     case invalidConfiguration
 }
 
+@available(macOS 10.14, *)
 public protocol PushNotificationDelegate: AnyObject {
     func pushNotificationSDK(_ sdk: PushNotificationSDK, didReceiveToken token: String)
     func pushNotificationSDK(_ sdk: PushNotificationSDK, didReceiveNotification response: UNNotificationResponse)
@@ -16,6 +19,7 @@ public protocol PushNotificationDelegate: AnyObject {
 }
 
 @MainActor
+@available(macOS 10.14, *)
 public final class PushNotificationSDK: NSObject {
     public static let shared = PushNotificationSDK()
 
@@ -32,7 +36,9 @@ public final class PushNotificationSDK: NSObject {
         notificationProcessor = NotificationProcessor()
         appStateObserver = DefaultAppStateObserver()
         super.init()
+#if canImport(UIKit)
         authorizationCenter.delegate = self
+#endif
         appStateObserver.startObserving(self)
     }
 
@@ -53,9 +59,11 @@ public final class PushNotificationSDK: NSObject {
                 return
             }
 
+#if canImport(UIKit)
             DispatchQueue.main.async {
                 UIApplication.shared.registerForRemoteNotifications()
             }
+#endif
         }
     }
 
@@ -86,6 +94,8 @@ public final class PushNotificationSDK: NSObject {
     }
 }
 
+#if canImport(UIKit)
+@available(macOS 10.14, *)
 extension PushNotificationSDK: UNUserNotificationCenterDelegate {
     public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         handleNotificationResponse(response)
@@ -96,3 +106,4 @@ extension PushNotificationSDK: UNUserNotificationCenterDelegate {
         return [.banner, .sound]
     }
 }
+#endif

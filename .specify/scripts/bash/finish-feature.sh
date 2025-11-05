@@ -10,6 +10,25 @@
 
 set -e
 
+REQUIRED_STATUS_CHECKS=(
+    "CI / Quality Checks"
+    "Server CI / server-test"
+    "Android SDK CI / android-test"
+    "iOS SDK CI / ios-test"
+    "Unity SDK CI / unity-editmode-test"
+)
+
+contains_element() {
+    local needle="$1"
+    shift || true
+    for element in "$@"; do
+        if [[ "$element" == "$needle" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 DRAFT=false
 
 for arg in "$@"; do
@@ -85,9 +104,144 @@ if ! git diff-index --quiet HEAD --; then
     exit 1
 fi
 
+ensure_required_status_checks() {
+    if ! command -v gh &> /dev/null; then
+        echo "⚠️  Skipped (GitHub CLI not available)."
+        return
+    fi
+
+    if ! command -v jq &> /dev/null; then
+        echo "⚠️  Skipped (jq not installed)."
+        return
+    fi
+
+    local repo owner name
+    if ! repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null); then
+        echo "⚠️  Skipped (failed to resolve repository)."
+        return
+    fi
+    owner="${repo%/*}"
+    name="${repo#*/}"
+
+    read -r -d '' BRANCH_RULE_QUERY <<'GRAPHQL'
+query ($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    id
+    branchProtectionRules(first: 100) {
+      nodes {
+        id
+        pattern
+        requiredStatusCheckContexts
+      }
+    }
+  }
+}
+GRAPHQL
+
+    local response repo_id rule_node
+    if ! response=$(gh api graphql -f query="$BRANCH_RULE_QUERY" -f owner="$owner" -f name="$name" 2>/dev/null); then
+        echo "⚠️  Skipped (failed to fetch branch protection rules)."
+        return
+    fi
+
+    repo_id=$(echo "$response" | jq -r '.data.repository.id')
+    rule_node=$(echo "$response" | jq -c '.data.repository.branchProtectionRules.nodes[] | select(.pattern == "main")')
+
+    if [[ -z "$rule_node" || "$rule_node" == "null" ]]; then
+        read -r -d '' CREATE_BRANCH_RULE <<'GRAPHQL'
+mutation ($repositoryId: ID!, $pattern: String!) {
+  createBranchProtectionRule(input: {
+    repositoryId: $repositoryId,
+    pattern: $pattern,
+    requiresStatusChecks: true,
+    requiredStatusCheckContexts: []
+  }) {
+    branchProtectionRule {
+      id
+      requiredStatusCheckContexts
+    }
+  }
+}
+GRAPHQL
+
+        local create_output
+        if ! create_output=$(gh api graphql -f query="$CREATE_BRANCH_RULE" -F repositoryId="$repo_id" -F pattern="main" 2>/dev/null); then
+            echo "⚠️  Skipped (failed to create branch protection rule for main)."
+            return
+        fi
+        rule_node=$(echo "$create_output" | jq -c '.data.createBranchProtectionRule.branchProtectionRule')
+    fi
+
+    local rule_id
+    rule_id=$(echo "$rule_node" | jq -r '.id')
+
+    local current_contexts=()
+    while IFS= read -r line; do
+        if [[ -n "$line" ]]; then
+            current_contexts+=("$line")
+        fi
+    done < <(echo "$rule_node" | jq -r '.requiredStatusCheckContexts[]?' 2>/dev/null)
+
+    local merged_contexts=()
+
+    for context in "${REQUIRED_STATUS_CHECKS[@]}"; do
+        if ! contains_element "$context" "${merged_contexts[@]}"; then
+            merged_contexts+=("$context")
+        fi
+    done
+
+    for context in "${current_contexts[@]}"; do
+        if [[ -n "$context" ]] && ! contains_element "$context" "${merged_contexts[@]}"; then
+            merged_contexts+=("$context")
+        fi
+    done
+
+    local needs_update=false
+    if ((${#merged_contexts[@]} != ${#current_contexts[@]})); then
+        needs_update=true
+    else
+        for i in "${!merged_contexts[@]}"; do
+            if [[ "${merged_contexts[$i]}" != "${current_contexts[$i]}" ]]; then
+                needs_update=true
+                break
+            fi
+        done
+    fi
+
+    if [ "$needs_update" = false ]; then
+        echo "✓ Required status checks already configured."
+        return
+    fi
+
+    read -r -d '' UPDATE_BRANCH_RULE <<'GRAPHQL'
+mutation ($ruleId: ID!, $contexts: [String!]!) {
+  updateBranchProtectionRule(input: {
+    branchProtectionRuleId: $ruleId,
+    requiresStatusChecks: true,
+    requiredStatusCheckContexts: $contexts
+  }) {
+    branchProtectionRule {
+      requiredStatusCheckContexts
+    }
+  }
+}
+GRAPHQL
+
+    local field_args=()
+    for context in "${merged_contexts[@]}"; do
+        field_args+=("-F" "contexts[]=$context")
+    done
+
+    if gh api graphql -f query="$UPDATE_BRANCH_RULE" -F ruleId="$rule_id" "${field_args[@]}" >/dev/null 2>&1; then
+        echo "✓ Required status checks updated: ${merged_contexts[*]}"
+    else
+        echo "⚠️  Failed to update required status checks (insufficient permissions?)."
+    fi
+}
+
 # Check if gh CLI is installed and authenticated
 echo ""
-echo "[1/4] Checking GitHub CLI..."
+echo "[1/5] Checking GitHub CLI..."
 if ! command -v gh &> /dev/null; then
     echo "ERROR: GitHub CLI (gh) is not installed." >&2
     echo "Please install it from: https://cli.github.com/" >&2
@@ -102,14 +256,18 @@ fi
 
 echo "✓ GitHub CLI is ready"
 
+echo ""
+echo "[2/5] Ensuring required status checks on main..."
+ensure_required_status_checks
+
 # Push feature branch to remote
 echo ""
-echo "[2/4] Pushing feature branch to remote..."
+echo "[3/5] Pushing feature branch to remote..."
 git push -u origin "$CURRENT_BRANCH"
 
 # Get PR title from spec.md
 echo ""
-echo "[3/4] Creating Pull Request..."
+echo "[4/5] Creating Pull Request..."
 SPEC_FILE="$REPO_ROOT/specs/$SPEC_ID/spec.md"
 PR_TITLE="Feature implementation"
 
@@ -161,7 +319,7 @@ fi
 PR_URL=$(gh pr view "$CURRENT_BRANCH" --json url --jq .url 2>/dev/null || echo "")
 
 echo ""
-echo "[4/4] Cleaning up..."
+echo "[5/5] Cleaning up..."
 rm -f "$REPO_ROOT/.specify/.current-feature"
 
 echo ""
