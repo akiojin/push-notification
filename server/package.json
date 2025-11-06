@@ -15,6 +15,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "env:check": "tsx scripts/validate-env.ts",
+    "generate-api-key": "tsx scripts/generate-api-key.ts",
     "test": "vitest",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage"
@@ -39,6 +40,7 @@
     "@fastify/swagger-ui": "^5.2.3",
     "@prisma/client": "^6.18.0",
     "apn": "^2.2.0",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "fastify": "^5.6.1",
     "fastify-plugin": "^5.1.0",
@@ -50,6 +52,7 @@
   },
   "devDependencies": {
     "@testcontainers/postgresql": "^11.7.2",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^24.9.2",
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
