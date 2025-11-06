@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { App, initializeApp, cert, getApps } from 'firebase-admin/app';
+import { App, initializeApp, cert, getApps, deleteApp } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 
 import { loadEnv } from '../../config/env.js';
@@ -63,15 +63,7 @@ export async function sendFcmNotification(payload: FcmPayload) {
         imageUrl: payload.imageUrl ?? undefined,
       },
       data: payload.customData ? Object.fromEntries(Object.entries(payload.customData).map(([key, value]) => [key, String(value)])) : undefined,
-    },
-    // options
-    process.env.FCM_MOCK_URL
-      ? {
-          // Workaround: firebase-admin SDK doesn't expose direct base URL override.
-          // Instead, we temporarily set emulator host via environment variable.
-          // This block is left empty because the actual override uses env var below.
-        }
-      : undefined);
+    });
   } catch (error) {
     if (error instanceof NotificationProviderError || error instanceof NotificationConfigurationError) {
       throw error;
@@ -83,10 +75,10 @@ export async function sendFcmNotification(payload: FcmPayload) {
   }
 }
 
-export function resetFirebaseApp() {
+export async function resetFirebaseApp() {
   const apps = getApps();
   for (const app of apps) {
-    app.delete().catch(() => undefined);
+    await deleteApp(app).catch(() => undefined);
   }
   firebaseApp = null;
 }

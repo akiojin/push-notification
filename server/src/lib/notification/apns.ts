@@ -45,7 +45,7 @@ export async function sendApnsNotification(payload: ApnsPayload) {
     const env = loadEnv();
     const client = getProvider();
     const notification = new apn.Notification();
-    notification.topic = env.APNS_BUNDLE_ID;
+    notification.topic = env.APNS_BUNDLE_ID!;
     notification.alert = {
       title: payload.title,
       body: payload.body,
