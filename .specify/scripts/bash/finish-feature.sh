@@ -145,7 +145,7 @@ GRAPHQL
     fi
 
     repo_id=$(echo "$response" | jq -r '.data.repository.id')
-    rule_node=$(echo "$response" | jq -c '.data.repository.branchProtectionRules.nodes[] | select(.pattern == "main")')
+    rule_node=$(echo "$response" | jq -c '.data.repository.branchProtectionRules.nodes[] | select(.pattern == "develop")')
 
     if [[ -z "$rule_node" || "$rule_node" == "null" ]]; then
         read -r -d '' CREATE_BRANCH_RULE <<'GRAPHQL'
@@ -165,8 +165,8 @@ mutation ($repositoryId: ID!, $pattern: String!) {
 GRAPHQL
 
         local create_output
-        if ! create_output=$(gh api graphql -f query="$CREATE_BRANCH_RULE" -F repositoryId="$repo_id" -F pattern="main" 2>/dev/null); then
-            echo "⚠️  Skipped (failed to create branch protection rule for main)."
+        if ! create_output=$(gh api graphql -f query="$CREATE_BRANCH_RULE" -F repositoryId="$repo_id" -F pattern="develop" 2>/dev/null); then
+            echo "⚠️  Skipped (failed to create branch protection rule for develop)."
             return
         fi
         rule_node=$(echo "$create_output" | jq -c '.data.createBranchProtectionRule.branchProtectionRule')
@@ -257,7 +257,7 @@ fi
 echo "✓ GitHub CLI is ready"
 
 echo ""
-echo "[2/5] Ensuring required status checks on main..."
+echo "[2/5] Ensuring required status checks on develop..."
 ensure_required_status_checks
 
 # Push feature branch to remote
@@ -287,7 +287,7 @@ PR_BODY=$(cat <<EOF
 
 ## 変更サマリー
 
-$(git log origin/main..HEAD --oneline --no-merges | head -10)
+$(git log origin/develop..HEAD --oneline --no-merges | head -10)
 
 ---
 
@@ -302,16 +302,16 @@ $(git log origin/main..HEAD --oneline --no-merges | head -10)
 
 📝 **詳細**: \`specs/$SPEC_ID/spec.md\` を参照してください。
 
-🤖 このPRは自動マージワークフローの対象です。すべてのCI/CDチェックが成功すると自動的にmainブランチへマージされます。
+🤖 このPRは自動マージワークフローの対象です。すべてのCI/CDチェックが成功すると自動的にdevelopブランチへマージされます。
 EOF
 )
 
 # Create PR (draft or normal)
 if [ "$DRAFT" = true ]; then
-    gh pr create --base main --head "$CURRENT_BRANCH" --title "$PR_TITLE" --body "$PR_BODY" --draft
+    gh pr create --base develop --head "$CURRENT_BRANCH" --title "$PR_TITLE" --body "$PR_BODY" --draft
     echo "✓ Draft PR created successfully"
 else
-    gh pr create --base main --head "$CURRENT_BRANCH" --title "$PR_TITLE" --body "$PR_BODY"
+    gh pr create --base develop --head "$CURRENT_BRANCH" --title "$PR_TITLE" --body "$PR_BODY"
     echo "✓ PR created successfully"
 fi
 
@@ -332,7 +332,7 @@ if [ -n "$PR_URL" ]; then
     echo ""
 fi
 echo "GitHub Actions will now run quality checks."
-echo "If all checks pass, the PR will be automatically merged to main."
+echo "If all checks pass, the PR will be automatically merged to develop."
 echo ""
 if [ "$DRAFT" = true ]; then
     echo "Note: This is a draft PR and will NOT be auto-merged."
