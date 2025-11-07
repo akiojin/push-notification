@@ -225,17 +225,17 @@ cd .worktrees/SPEC-0d5d84f9/
 
 ## バージョン管理
 
-### Git Flow + semantic-release
+### develop/main + semantic-release
 
-本プロジェクトは**Git Flow**ベースのブランチ戦略と**semantic-release**による自動バージョン管理を採用しています。
+本プロジェクトは**develop/mainブランチ戦略**と**semantic-release**による自動バージョン管理を採用しています。
 
 #### ブランチ戦略
 
 ```
-feature/SPEC-xxx → develop → release/x.y.z → main
-                                              ↓
-                                         semantic-release
-                                         (タグ作成、CHANGELOG更新)
+feature/SPEC-xxx → develop → main
+                               ↓
+                          semantic-release
+                          (バージョン決定、タグ作成、CHANGELOG更新)
 ```
 
 **主要ブランチ**:
@@ -243,8 +243,6 @@ feature/SPEC-xxx → develop → release/x.y.z → main
 - **main**: 本番環境相当、リリース済みコード
 - **develop**: 開発中の最新コード
 - **feature/SPEC-xxx**: 機能開発ブランチ（Worktree運用）
-- **release/x.y.z**: リリース準備ブランチ
-- **hotfix/xxx**: 緊急修正ブランチ
 
 #### リリースフロー
 
@@ -256,7 +254,7 @@ feature/SPEC-xxx → develop → release/x.y.z → main
 # → featureブランチをdevelopへ自動マージ
 ```
 
-**2. リリース作成（develop → release → main）**:
+**2. リリース作成（develop → main）**:
 
 ```bash
 # /release コマンド実行
@@ -265,38 +263,22 @@ feature/SPEC-xxx → develop → release/x.y.z → main
 .specify/scripts/bash/create-release.sh
 
 # 実行内容:
-# 1. semantic-release dry-runでバージョン予測
-# 2. release/x.y.z ブランチ作成
-# 3. mainへのPR自動作成
-# 4. CIチェック成功後、mainへ自動マージ
+# 1. developからmainへPR作成
+# 2. CIチェック実行
+# 3. チェック成功後、mainへ自動マージ
 ```
 
 **3. バージョンタグ作成（main）**:
 
 ```bash
 # mainへのマージ時、GitHub Actionsで自動実行
-# 1. semantic-releaseがバージョン決定
-# 2. CHANGELOG.md自動更新
-# 3. Gitタグ作成（例: v1.2.0）
-# 4. GitHub Release作成
-# 5. developへ変更を自動マージ（バックマージ）
-```
-
-**4. 緊急修正（hotfix → main + develop）**:
-
-```bash
-# /hotfix コマンド実行
-/hotfix <バグ説明>
-# または直接スクリプト実行
-.specify/scripts/bash/create-hotfix.sh <バグ説明>
-
-# 実行内容:
-# 1. mainからhotfix/xxxブランチ作成
-# 2. 修正実施＋テスト
-# 3. mainへPR作成
-# 4. CIチェック成功後、mainへ自動マージ
-# 5. semantic-releaseでパッチバージョンアップ
-# 6. developへ自動マージ（バックマージ）
+# 1. semantic-releaseがConventional Commitsからバージョン決定
+# 2. package.json更新
+# 3. CHANGELOG.md更新
+# 4. 上記変更をmainに直接コミット
+# 5. Gitタグ作成（例: v1.2.0）
+# 6. GitHub Release作成
+# 7. developへ変更を自動バックマージ
 ```
 
 #### バージョン決定ルール（Conventional Commits）
@@ -319,8 +301,7 @@ semantic-releaseは**Conventional Commits**形式のコミットメッセージ�
 
 #### コマンド一覧
 
-- `/release`: developからreleaseブランチ作成＋PR作成
-- `/hotfix <説明>`: mainからhotfixブランチ作成
+- `/release`: developからmainへPR作成
 - `finish-feature.sh`: featureブランチをdevelopへマージ
 
 ## コードクオリティガイドライン
