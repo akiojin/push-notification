@@ -11,11 +11,11 @@
 set -e
 
 REQUIRED_STATUS_CHECKS=(
-    "CI / Quality Checks"
-    "Server CI / server-test"
-    "Android SDK CI / android-test"
-    "iOS SDK CI / ios-test"
-    "Unity SDK CI / unity-editmode-test"
+    "Quality Checks"
+    "server-test"
+    "android-test"
+    "ios-test"
+    "unity-editmode-test"
 )
 
 contains_element() {
