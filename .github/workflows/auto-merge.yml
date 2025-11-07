@@ -1,163 +1,53 @@
 name: Auto Merge
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
   pull_request:
     types:
       - opened
-      - synchronize
       - reopened
+      - synchronize
+      - ready_for_review
     branches:
       - main
       - develop
 
 jobs:
-  auto-merge:
-    name: Auto Merge PR
+  enable-auto-merge:
+    name: Enable Auto-Merge
     runs-on: ubuntu-latest
-    if: >
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.event == 'pull_request') ||
-      github.event_name == 'pull_request'
 
     permissions:
       contents: write
       pull-requests: write
-      checks: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Wait for CI to complete (pull_request event only)
-        if: github.event_name == 'pull_request'
+      - name: Check if PR is draft
+        id: check-draft
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Waiting for CI workflow to complete..."
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          IS_DRAFT=$(gh pr view "$PR_NUMBER" --json isDraft --jq '.isDraft')
 
-          # Wait up to 10 minutes for CI to complete
-          for i in {1..60}; do
-            # Get the status of the check job
-            STATUS=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }}/check-runs \
-              --jq '.check_runs[] | select(.name == "Quality Checks") | .status')
+          echo "is_draft=$IS_DRAFT" >> $GITHUB_OUTPUT
+          echo "PR #$PR_NUMBER - Draft: $IS_DRAFT"
 
-            CONCLUSION=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }}/check-runs \
-              --jq '.check_runs[] | select(.name == "Quality Checks") | .conclusion')
-
-            echo "Attempt $i/60: Status=$STATUS, Conclusion=$CONCLUSION"
-
-            if [ "$STATUS" = "completed" ]; then
-              if [ "$CONCLUSION" = "success" ]; then
-                echo "CI completed successfully!"
-                exit 0
-              else
-                echo "CI failed with conclusion: $CONCLUSION"
-                exit 1
-              fi
-            fi
-
-            sleep 10
-          done
-
-          echo "Timeout waiting for CI to complete"
-          exit 1
-
-      - name: Get PR number
-        id: pr
+      - name: Enable auto-merge
+        if: steps.check-draft.outputs.is_draft == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR_NUMBER="${{ github.event.pull_request.number }}"
-          else
-            PR_NUMBER=$(gh pr list \
-              --head "${{ github.event.workflow_run.head_branch }}" \
-              --json number \
-              --jq '.[0].number')
-          fi
+          PR_NUMBER="${{ github.event.pull_request.number }}"
 
-          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
-            echo "No PR found"
-            exit 0
-          fi
+          echo "Enabling auto-merge for PR #$PR_NUMBER..."
 
-          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "Found PR #$PR_NUMBER"
+          # Enable auto-merge with merge commit (--merge)
+          gh pr merge "$PR_NUMBER" --auto --merge
 
-      - name: Check PR status
-        id: check
-        if: steps.pr.outputs.number != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "✓ Auto-merge enabled for PR #$PR_NUMBER"
+          echo "The PR will be automatically merged when all required checks pass."
+
+      - name: Skip draft PR
+        if: steps.check-draft.outputs.is_draft == 'true'
         run: |
-          PR_NUMBER="${{ steps.pr.outputs.number }}"
-
-          PR_DATA=$(gh pr view "$PR_NUMBER" \
-            --json id,mergeable,mergeStateStatus,isDraft)
-
-          MERGEABLE=$(echo "$PR_DATA" | jq -r '.mergeable')
-          MERGE_STATE=$(echo "$PR_DATA" | jq -r '.mergeStateStatus')
-          IS_DRAFT=$(echo "$PR_DATA" | jq -r '.isDraft')
-          PR_ID=$(echo "$PR_DATA" | jq -r '.id')
-
-          echo "Mergeable: $MERGEABLE"
-          echo "Merge State: $MERGE_STATE"
-          echo "Is Draft: $IS_DRAFT"
-
-          # Check if PR is ready to merge
-          if [ "$IS_DRAFT" = "true" ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "reason=PR is a draft" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          if [ "$MERGEABLE" != "MERGEABLE" ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "reason=PR is not mergeable (status: $MERGEABLE)" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          if [ "$MERGE_STATE" != "CLEAN" ] && [ "$MERGE_STATE" != "UNSTABLE" ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "reason=Merge state is $MERGE_STATE" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "skip=false" >> $GITHUB_OUTPUT
-          echo "pr_id=$PR_ID" >> $GITHUB_OUTPUT
-
-      - name: Merge PR
-        if: steps.check.outputs.skip == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PR_ID="${{ steps.check.outputs.pr_id }}"
-          PR_NUMBER="${{ steps.pr.outputs.number }}"
-
-          echo "Merging PR #$PR_NUMBER..."
-
-          gh api graphql -f query='
-            mutation($pr: ID!) {
-              mergePullRequest(input: {
-                pullRequestId: $pr,
-                mergeMethod: MERGE
-              }) {
-                pullRequest {
-                  number
-                  merged
-                }
-              }
-            }
-          ' -f pr="$PR_ID"
-
-          echo "PR #$PR_NUMBER has been merged successfully!"
-
-      - name: Skip merge
-        if: steps.check.outputs.skip == 'true'
-        run: |
-          echo "Auto-merge skipped: ${{ steps.check.outputs.reason }}"
+          echo "PR #${{ github.event.pull_request.number }} is a draft - auto-merge not enabled"
