@@ -15,27 +15,17 @@ jobs:
   enable-auto-merge:
     name: Enable Auto-Merge
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
 
     permissions:
       contents: write
       pull-requests: write
 
     steps:
-      - name: Check if PR is draft
-        id: check-draft
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          IS_DRAFT=$(gh pr view "$PR_NUMBER" --json isDraft --jq '.isDraft')
-
-          echo "is_draft=$IS_DRAFT" >> $GITHUB_OUTPUT
-          echo "PR #$PR_NUMBER - Draft: $IS_DRAFT"
-
       - name: Enable auto-merge
-        if: steps.check-draft.outputs.is_draft == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
@@ -46,8 +36,3 @@ jobs:
 
           echo "✓ Auto-merge enabled for PR #$PR_NUMBER"
           echo "The PR will be automatically merged when all required checks pass."
-
-      - name: Skip draft PR
-        if: steps.check-draft.outputs.is_draft == 'true'
-        run: |
-          echo "PR #${{ github.event.pull_request.number }} is a draft - auto-merge not enabled"
