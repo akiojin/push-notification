@@ -42,6 +42,7 @@ RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
 
 RUN npm i -g \
     npm@latest \
+    pnpm@latest \
     bun@latest \
     typescript@latest \
     eslint@latest \
@@ -49,7 +50,15 @@ RUN npm i -g \
     @commitlint/cli@latest \
     @commitlint/config-conventional@latest
 
-WORKDIR /push-notification
+# Setup pnpm global bin directory manually
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN mkdir -p "$PNPM_HOME" && \
+    pnpm config set global-bin-dir "$PNPM_HOME" && \
+    echo 'export PNPM_HOME="/root/.local/share/pnpm"' >> /root/.bashrc && \
+    echo 'export PATH="$PNPM_HOME:$PATH"' >> /root/.bashrc
+
 # Use bash to invoke entrypoint to avoid exec-bit and CRLF issues on Windows mounts
 ENTRYPOINT ["bash", "/push-notification/scripts/entrypoint.sh"]
 CMD ["bash"]
