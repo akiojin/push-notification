@@ -12,6 +12,7 @@ on:
       - reopened
     branches:
       - main
+      - develop
 
 jobs:
   auto-merge:

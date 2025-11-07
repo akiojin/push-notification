@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main", "feature/push-notification" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 jobs:
   ios-test:
