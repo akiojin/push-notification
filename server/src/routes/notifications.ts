@@ -1,7 +1,11 @@
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
-import { UnknownDeviceTokensError, createNotification, getNotificationWithDeliveries } from '../lib/notification/index.js';
+import {
+  createNotification,
+  getNotificationWithDeliveries,
+  UnknownDeviceTokensError,
+} from '../lib/notification/index.js';
 import { buildErrorResponse, buildValidationError, zodErrorToDetails } from '../utils/errors.js';
 
 const createNotificationSchema = z.object({
@@ -60,16 +64,14 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
       reply.code(202).send(notification);
     } catch (error) {
       if (error instanceof UnknownDeviceTokensError) {
-        reply
-          .code(400)
-          .send(
-            buildErrorResponse('UNKNOWN_TOKENS', error.message, {
-              tokens: error.tokens,
-            }),
-          );
+        reply.code(400).send(
+          buildErrorResponse('UNKNOWN_TOKENS', error.message, {
+            tokens: error.tokens,
+          }),
+        );
         return;
       }
-      const message = error instanceof Error ? error.message : String(error);
+
       throw error;
     }
   });

@@ -1,9 +1,9 @@
 import { DeliveryStatus, Platform, Prisma } from '@prisma/client';
 import { z } from 'zod';
 
-import { prisma } from '../prisma.js';
 import { updateDeliveryStatus } from '../delivery/index.js';
 import { deleteDevice } from '../device/index.js';
+import { prisma } from '../prisma.js';
 import { sendApnsNotification } from './apns.js';
 import { NotificationConfigurationError, NotificationProviderError } from './errors.js';
 import { sendFcmNotification } from './fcm.js';
@@ -51,7 +51,9 @@ export class UnknownDeviceTokensError extends Error {
   }
 }
 
-export async function createNotification(input: NotificationCreateInput): Promise<NotificationCreateResult> {
+export async function createNotification(
+  input: NotificationCreateInput,
+): Promise<NotificationCreateResult> {
   const data = notificationCreateSchema.parse(input);
 
   const devices = await prisma.device.findMany({
@@ -134,7 +136,13 @@ export async function dispatchDeliveries({
   deliveries,
   payload,
 }: {
-  notification: { id: string; title: string; body: string; imageUrl: string | null; customData: Prisma.InputJsonValue | null };
+  notification: {
+    id: string;
+    title: string;
+    body: string;
+    imageUrl: string | null;
+    customData: Prisma.InputJsonValue | null;
+  };
   devices: Array<{ id: string; token: string; platform: Platform }>;
   deliveries: Array<{ id: string; deviceId: string }>;
   payload: NotificationCreateInput;
@@ -183,16 +191,17 @@ export async function dispatchDeliveries({
         } catch (error) {
           attempt += 1;
           const isLastAttempt = attempt >= MAX_DELIVERY_ATTEMPTS;
-        const message = error instanceof Error ? error.message : String(error);
-        const code =
-          error instanceof NotificationProviderError || error instanceof NotificationConfigurationError
-            ? error.code
-            : undefined;
-        const backoff = INITIAL_BACKOFF_MS * 2 ** (attempt - 1);
+          const message = error instanceof Error ? error.message : String(error);
+          const code =
+            error instanceof NotificationProviderError ||
+            error instanceof NotificationConfigurationError
+              ? error.code
+              : undefined;
+          const backoff = INITIAL_BACKOFF_MS * 2 ** (attempt - 1);
 
-        await updateDeliveryStatus({
-          deliveryId: delivery.id,
-          status: isLastAttempt ? DeliveryStatus.FAILED : DeliveryStatus.PENDING,
+          await updateDeliveryStatus({
+            deliveryId: delivery.id,
+            status: isLastAttempt ? DeliveryStatus.FAILED : DeliveryStatus.PENDING,
             errorCode: code ?? 'DELIVERY_FAILED',
             errorMessage: message,
             retryCount: attempt,
@@ -208,7 +217,9 @@ export async function dispatchDeliveries({
               } catch (deleteError) {
                 // device might already be deleted; log and continue
                 if (deleteError instanceof Error) {
-                  console.warn(`Failed to delete device token ${device.token}: ${deleteError.message}`);
+                  console.warn(
+                    `Failed to delete device token ${device.token}: ${deleteError.message}`,
+                  );
                 }
               }
             }

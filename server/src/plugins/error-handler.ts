@@ -4,7 +4,7 @@ import { ZodError } from 'zod';
 
 import { buildErrorResponse, buildValidationError, zodErrorToDetails } from '../utils/errors.js';
 
-const errorHandlerPlugin: FastifyPluginAsync = async (fastify) => {
+const errorHandlerPlugin: FastifyPluginAsync = (fastify) => {
   fastify.setErrorHandler((error, request, reply) => {
     if (reply.sent) {
       return reply;

@@ -9,12 +9,12 @@ import swaggerUi from '@fastify/swagger-ui';
 import Fastify from 'fastify';
 
 import { loadEnv } from './config/env.js';
-import { loadOpenApiDocument } from './config/openapi.js';
 import { getLoggerOptions } from './config/logger.js';
+import { loadOpenApiDocument } from './config/openapi.js';
+import { startDeliveryRetryWorker } from './jobs/delivery-retry.js';
+import loggerMiddleware from './middleware/logger.js';
 import apiKeyAuth from './plugins/api-key-auth.js';
 import errorHandler from './plugins/error-handler.js';
-import loggerMiddleware from './middleware/logger.js';
-import { startDeliveryRetryWorker, stopDeliveryRetryWorker } from './jobs/delivery-retry.js';
 import notificationsRoutes from './routes/notifications.js';
 import tokensRoutes from './routes/tokens.js';
 import { buildErrorResponse } from './utils/errors.js';
@@ -44,7 +44,10 @@ export async function buildServer() {
     errorResponseBuilder: (_request, context) => {
       const rawRetryAfter = context.after;
       const retryAfterSeconds = Number(rawRetryAfter);
-      const retryAfterValue = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0 ? retryAfterSeconds : rawRetryAfter;
+      const retryAfterValue =
+        Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+          ? retryAfterSeconds
+          : rawRetryAfter;
       const hasRetryAfter = retryAfterValue !== undefined && retryAfterValue !== null;
       const message = hasRetryAfter
         ? `Rate limit exceeded. Please retry after ${retryAfterValue} ${typeof retryAfterValue === 'number' ? 'seconds' : ''}`.trim()
@@ -78,15 +81,19 @@ export async function buildServer() {
   app.get('/healthz', () => ({ status: 'ok' }));
 
   if (env.NODE_ENV !== 'test') {
-    const intervalValue = env.DELIVERY_RETRY_INTERVAL_MS ? Number(env.DELIVERY_RETRY_INTERVAL_MS) : undefined;
-    const batchValue = env.DELIVERY_RETRY_BATCH_SIZE ? Number(env.DELIVERY_RETRY_BATCH_SIZE) : undefined;
+    const intervalValue = env.DELIVERY_RETRY_INTERVAL_MS
+      ? Number(env.DELIVERY_RETRY_INTERVAL_MS)
+      : undefined;
+    const batchValue = env.DELIVERY_RETRY_BATCH_SIZE
+      ? Number(env.DELIVERY_RETRY_BATCH_SIZE)
+      : undefined;
 
     const stopWorker = startDeliveryRetryWorker(app.log, {
       intervalMs: intervalValue && intervalValue > 0 ? intervalValue : undefined,
       batchSize: batchValue && batchValue > 0 ? batchValue : undefined,
     });
 
-    app.addHook('onClose', async () => {
+    app.addHook('onClose', () => {
       stopWorker();
     });
   }

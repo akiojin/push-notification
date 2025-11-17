@@ -1,8 +1,8 @@
-import { DeliveryStatus, Prisma } from '@prisma/client';
+import { DeliveryStatus } from '@prisma/client';
 import type { FastifyBaseLogger } from 'fastify';
 
-import { prisma } from '../lib/prisma.js';
 import { dispatchDeliveries, MAX_DELIVERY_ATTEMPTS } from '../lib/notification/index.js';
+import { prisma } from '../lib/prisma.js';
 
 const DEFAULT_POLL_INTERVAL_MS = 1000;
 const DEFAULT_BATCH_SIZE = 20;
@@ -71,7 +71,7 @@ export async function processPendingDeliveries(
 
     const devices = deliveries
       .map((delivery) => delivery.device)
-      .filter((device): device is NonNullable<typeof deliveries[number]['device']> => Boolean(device))
+      .filter((device): device is (typeof deliveries)[number]['device'] => Boolean(device))
       .map((device) => ({
         id: device.id,
         token: device.token,
@@ -82,12 +82,16 @@ export async function processPendingDeliveries(
       continue;
     }
 
-    const customData = notification.customData as Prisma.JsonValue | null;
+    const customData = notification.customData;
+    const customDataRecord: Record<string, unknown> | undefined =
+      customData && typeof customData === 'object' && !Array.isArray(customData)
+        ? customData
+        : undefined;
     const payload = {
       title: notification.title,
       body: notification.body,
       imageUrl: notification.imageUrl ?? undefined,
-      customData: (customData && typeof customData === 'object') ? (customData as Record<string, unknown>) : undefined,
+      customData: customDataRecord,
       tokens: devices.map((device) => device.token),
     };
 
@@ -111,10 +115,7 @@ export async function processPendingDeliveries(
   logger.info({ processed: pending.length }, 'delivery retry job processed pending deliveries');
 }
 
-export function startDeliveryRetryWorker(
-  logger: FastifyBaseLogger,
-  options: WorkerOptions = {},
-) {
+export function startDeliveryRetryWorker(logger: FastifyBaseLogger, options: WorkerOptions = {}) {
   if (timer) {
     return stopDeliveryRetryWorker;
   }
@@ -126,7 +127,9 @@ export function startDeliveryRetryWorker(
       return;
     }
     if (processing) {
-      timer = setTimeout(tick, intervalMs);
+      timer = setTimeout(() => {
+        void tick();
+      }, intervalMs);
       return;
     }
 
@@ -138,7 +141,9 @@ export function startDeliveryRetryWorker(
     } finally {
       processing = false;
       if (!stopped) {
-        timer = setTimeout(tick, intervalMs);
+        timer = setTimeout(() => {
+          void tick();
+        }, intervalMs);
       }
     }
   };

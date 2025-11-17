@@ -1,7 +1,13 @@
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
-import { deleteDevice, findDeviceByToken, listNotificationsByDevice, updateDevice, upsertDevice } from '../lib/device/index.js';
+import {
+  deleteDevice,
+  findDeviceByToken,
+  listNotificationsByDevice,
+  updateDevice,
+  upsertDevice,
+} from '../lib/device/index.js';
 import { buildErrorResponse, buildValidationError, zodErrorToDetails } from '../utils/errors.js';
 
 const registerBody = z.object({

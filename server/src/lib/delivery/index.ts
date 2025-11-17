@@ -19,7 +19,17 @@ export type DeliveryUpdateInput = z.infer<typeof updateStatusSchema>;
 
 export async function updateDeliveryStatus(input: DeliveryUpdateInput) {
   const data = updateStatusSchema.parse(input);
-  const { deliveryId, status, errorCode, errorMessage, deliveredAt, retryCount, lastAttemptAt, nextAttemptAt, lastErrorAt } = data;
+  const {
+    deliveryId,
+    status,
+    errorCode,
+    errorMessage,
+    deliveredAt,
+    retryCount,
+    lastAttemptAt,
+    nextAttemptAt,
+    lastErrorAt,
+  } = data;
 
   const updateData: Record<string, unknown> = {};
   if (status !== undefined) {

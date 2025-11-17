@@ -12,7 +12,11 @@ export interface ErrorResponse {
   };
 }
 
-export function buildErrorResponse(code: string, message: string, details?: ErrorDetails): ErrorResponse {
+export function buildErrorResponse(
+  code: string,
+  message: string,
+  details?: ErrorDetails,
+): ErrorResponse {
   return {
     error: details ? { code, message, details } : { code, message },
   };
