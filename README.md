@@ -125,13 +125,13 @@ Unity Test Runner (Edit Mode) でテスト可。Samples タブから **Minimal S
 - [ ] サンプルアプリ/ゲームの追加 (エンドツーエンド検証)
 
 ## リント / フォーマット
-- ルートで `npm install` を実行すると Husky フックがセットアップされます（`prepare` スクリプト）。
-- Markdown: `npm run lint:md`
-- Server(TypeScript): `npm run lint:server`
-- iOS(Swift): `npm run lint:ios`（SwiftLint 必須）
-- Android(Kotlin): `npm run lint:android`（Android SDK が必要）
-- Unity/Unreal(C#): `npm run lint:unity`（.NET SDK 8+ が必要）
-- まとめて実行: `npm run check:all`
+- ルートで `pnpm install` を実行すると Husky フックがセットアップされます（`prepare` スクリプト）。
+- Markdown: `pnpm run lint:md`
+- Server(TypeScript): `pnpm run lint:server`
+- iOS(Swift): `pnpm run lint:ios`（SwiftLint 必須）
+- Android(Kotlin): `pnpm run lint:android`（Android SDK が必要）
+- Unity/Unreal(C#): `pnpm run lint:unity`（.NET SDK 8+ が必要）
+- まとめて実行: `pnpm run check:all`
 
 ## CI
 
