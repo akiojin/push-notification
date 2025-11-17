@@ -23,6 +23,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x android-sdk/gradlew
 
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
+
       - name: Run unit tests
         working-directory: android-sdk
-        run: ./gradlew :android-sdk:test --stacktrace
+        run: ./gradlew :android-sdk:test --stacktrace --info --console=plain
