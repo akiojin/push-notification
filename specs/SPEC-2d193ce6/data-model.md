@@ -223,14 +223,14 @@ await prisma.device.upsert({
 });
 ```
 
-2. **プレイヤーのすべてのデバイス取得**:
+1. **プレイヤーのすべてのデバイス取得**:
 ```typescript
 const devices = await prisma.device.findMany({
   where: { playerAccountId: playerId }
 });
 ```
 
-3. **通知送信とDeliveryLog作成**:
+1. **通知送信とDeliveryLog作成**:
 ```typescript
 const notification = await prisma.notification.create({
   data: { title, body, imageUrl, customData }
@@ -245,7 +245,7 @@ const deliveryLogs = await prisma.deliveryLog.createMany({
 });
 ```
 
-4. **配信状況取得**:
+1. **配信状況取得**:
 ```typescript
 const logs = await prisma.deliveryLog.findMany({
   where: { notificationId },
@@ -253,7 +253,7 @@ const logs = await prisma.deliveryLog.findMany({
 });
 ```
 
-5. **失敗した配信のリトライ対象取得**:
+1. **失敗した配信のリトライ対象取得**:
 ```typescript
 const failedLogs = await prisma.deliveryLog.findMany({
   where: {

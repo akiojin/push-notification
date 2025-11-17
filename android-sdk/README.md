@@ -35,8 +35,8 @@ class App : Application() {
 }
 ```
 
-3. Firebase を設定し、`google-services.json` を配置
-4. SDK が自動的に FCM トークンを取得し、バックエンドに登録します
+1. Firebase を設定し、`google-services.json` を配置
+2. SDK が自動的に FCM トークンを取得し、バックエンドに登録します
 
 ## テスト
 
