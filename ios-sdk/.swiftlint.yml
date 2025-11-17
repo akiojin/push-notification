@@ -1,0 +1,14 @@
+disabled_rules:
+  - todo
+  - trailing_whitespace
+
+line_length:
+  warning: 140
+  error: 200
+
+excluded:
+  - .build
+  - .swiftpm
+  - Carthage
+  - Pods
+  - DerivedData
