@@ -97,17 +97,26 @@ public final class PushNotificationSDK: NSObject {
 #if canImport(UIKit)
 @available(macOS 10.14, *)
 extension PushNotificationSDK: UNUserNotificationCenterDelegate {
-    public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        handleNotificationResponse(response)
-    }
-
-    public func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+    public func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
         delegate?.pushNotificationSDK(self, didReceiveForegroundNotification: notification)
         if #available(iOS 14.0, *) {
-            return [.banner, .sound]
+            completionHandler([.banner, .sound])
         } else {
-            return [.alert, .sound]
+            completionHandler([.alert, .sound])
         }
+    }
+
+    public func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        handleNotificationResponse(response)
+        completionHandler()
     }
 }
 #endif
