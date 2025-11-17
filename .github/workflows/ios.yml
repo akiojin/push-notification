@@ -19,5 +19,8 @@ jobs:
       - name: Build and test Swift package (iOS Simulator)
         working-directory: ios-sdk
         run: |
-          DESTINATION="platform=iOS Simulator,name=iPhone 15"
-          swift test --destination "$DESTINATION" --enable-code-coverage
+          xcodebuild \
+            -scheme PushNotificationSDK \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            test
