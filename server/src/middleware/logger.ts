@@ -1,7 +1,7 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginCallback } from 'fastify';
 import fp from 'fastify-plugin';
 
-const loggerMiddleware: FastifyPluginAsync = (fastify) => {
+const loggerMiddleware: FastifyPluginCallback = (fastify, _opts, done) => {
   fastify.addHook('onRequest', async (request, reply) => {
     const requestId = request.id;
     reply.header('x-request-id', requestId);
@@ -20,6 +20,8 @@ const loggerMiddleware: FastifyPluginAsync = (fastify) => {
       'request completed',
     );
   });
+
+  done();
 };
 
 export default fp(loggerMiddleware);

@@ -1,10 +1,10 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginCallback } from 'fastify';
 import fp from 'fastify-plugin';
 import { ZodError } from 'zod';
 
 import { buildErrorResponse, buildValidationError, zodErrorToDetails } from '../utils/errors.js';
 
-const errorHandlerPlugin: FastifyPluginAsync = (fastify) => {
+const errorHandlerPlugin: FastifyPluginCallback = (fastify, _opts, done) => {
   fastify.setErrorHandler((error, request, reply) => {
     if (reply.sent) {
       return reply;
@@ -53,6 +53,8 @@ const errorHandlerPlugin: FastifyPluginAsync = (fastify) => {
     fastify.log.error({ err: error }, 'Unhandled exception');
     return reply.send(buildErrorResponse('INTERNAL_SERVER_ERROR', 'Unexpected server error'));
   });
+
+  done();
 };
 
 export default fp(errorHandlerPlugin);
