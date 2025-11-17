@@ -13,16 +13,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check Unity license
+        id: unity_license
+        run: |
+          if [ -z "${{ secrets.UNITY_LICENSE }}" ] && [ -z "${{ secrets.UNITY_SERIAL }}" ]; then
+            echo "license_missing=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "license_missing=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Cache Unity
+        if: steps.unity_license.outputs.license_missing == 'false'
         uses: actions/cache@v4
         with:
           path: ~/.cache/unity3d
           key: unity-${{ runner.os }}
 
       - name: Run Unity EditMode tests
+        if: steps.unity_license.outputs.license_missing == 'false'
         uses: game-ci/unity-test-runner@v4
         with:
           projectPath: unity-sdk
           testMode: editmode
           unityVersion: 2022.3.21f1
           githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip Unity tests (license not provided)
+        if: steps.unity_license.outputs.license_missing == 'true'
+        run: echo "Skipping Unity EditMode tests because UNITY_LICENSE/UNITY_SERIAL is not set."
