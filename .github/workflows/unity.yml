@@ -4,40 +4,42 @@ on:
   push:
     branches: [ "main", "feature/push-notification" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 jobs:
   unity-editmode-test:
     runs-on: ubuntu-latest
+    env:
+      UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check Unity license
-        id: unity_license
-        run: |
-          if [ -z "${{ secrets.UNITY_LICENSE }}" ] && [ -z "${{ secrets.UNITY_SERIAL }}" ]; then
-            echo "license_missing=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "license_missing=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Cache Unity
-        if: steps.unity_license.outputs.license_missing == 'false'
         uses: actions/cache@v4
         with:
           path: ~/.cache/unity3d
           key: unity-${{ runner.os }}
 
+      - name: Check Unity license secret
+        id: license
+        run: |
+          if [ -z "$UNITY_LICENSE" ]; then
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::UNITY_LICENSE secret not configured. Unity tests will be skipped."
+          else
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run Unity EditMode tests
-        if: steps.unity_license.outputs.license_missing == 'false'
         uses: game-ci/unity-test-runner@v4
+        if: steps.license.outputs.missing == 'false'
         with:
           projectPath: unity-sdk
           testMode: editmode
           unityVersion: 2022.3.21f1
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Skip Unity tests (license not provided)
-        if: steps.unity_license.outputs.license_missing == 'true'
-        run: echo "Skipping Unity EditMode tests because UNITY_LICENSE/UNITY_SERIAL is not set."
+      - name: Report skipped Unity tests
+        if: steps.license.outputs.missing == 'true'
+        run: echo "Unity tests skipped because UNITY_LICENSE secret is not configured."

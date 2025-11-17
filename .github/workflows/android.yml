@@ -4,11 +4,10 @@ on:
   push:
     branches: [ "main", "feature/push-notification" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 jobs:
   android-test:
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,27 +20,9 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        continue-on-error: true
-        with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
-
       - name: Grant execute permission for gradlew
         run: chmod +x android-sdk/gradlew
 
-      - name: Accept Android SDK licenses
-        continue-on-error: true
-        run: |
-          if ! command -v sdkmanager >/dev/null 2>&1; then
-            echo "sdkmanager not found, skipping license acceptance."
-            exit 0
-          fi
-          yes | sdkmanager --licenses
-
       - name: Run unit tests
-        continue-on-error: true
         working-directory: android-sdk
-        run: ./gradlew :android-sdk:test --stacktrace --info --console=plain
+        run: ./gradlew :android-sdk:test --stacktrace

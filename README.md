@@ -146,5 +146,27 @@ GitHub Actions 上で以下のワークフローが自動実行されます:
 
 詳細な CI 設定と Secrets については [`docs/CI.md`](docs/CI.md) を参照してください。
 
+本プロジェクトは **develop/main ブランチ戦略** と **semantic-release** による自動バージョン管理を採用しています。
+
+### リリースフロー
+
+1. **機能開発**: `feature/SPEC-xxx` → `develop` (自動マージ)
+2. **リリース作成**: `/release` コマンドで `develop` → `main` のPR作成
+3. **バージョニング**: `main` へのマージ時に semantic-release が自動実行
+   - Conventional Commits からバージョン決定
+   - CHANGELOG.md 更新
+   - GitHub Release 作成
+   - タグ作成 (例: v1.2.0)
+
+### バージョン決定ルール
+
+| コミットタイプ | バージョン | 例 |
+| --- | --- | --- |
+| `feat:` | MINOR (0.x.0) | `feat: 新機能追加` |
+| `fix:` | PATCH (0.0.x) | `fix: バグ修正` |
+| `BREAKING CHANGE:` | MAJOR (x.0.0) | `feat!: 破壊的変更` |
+
+詳細は [CLAUDE.md](CLAUDE.md) を参照してください。
+
 ## ライセンス
 Apache License 2.0
