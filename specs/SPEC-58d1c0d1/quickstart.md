@@ -531,7 +531,7 @@ public class CustomData
 - **SDK API仕様**: [contracts/sdk-api.md](./contracts/sdk-api.md)
 - **データモデル**: [data-model.md](./data-model.md)
 - **バックエンドAPI**: [SPEC-2d193ce6 クイックスタート](../SPEC-2d193ce6/quickstart.md)
-- **GitHub Issues**: https://github.com/yourorg/push-notification-sdk-ios/issues
+- **GitHub Issues**: <https://github.com/yourorg/push-notification-sdk-ios/issues>
 
 ---
 

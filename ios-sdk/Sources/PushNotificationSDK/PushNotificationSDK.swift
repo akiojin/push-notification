@@ -103,7 +103,11 @@ extension PushNotificationSDK: UNUserNotificationCenterDelegate {
 
     public func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         delegate?.pushNotificationSDK(self, didReceiveForegroundNotification: notification)
-        return [.banner, .sound]
+        if #available(iOS 14.0, *) {
+            return [.banner, .sound]
+        } else {
+            return [.alert, .sound]
+        }
     }
 }
 #endif

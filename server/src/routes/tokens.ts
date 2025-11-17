@@ -5,8 +5,10 @@ import {
   deleteDevice,
   findDeviceByToken,
   listNotificationsByDevice,
+  updateDevice,
   upsertDevice,
 } from '../lib/device/index.js';
+import { buildErrorResponse, buildValidationError, zodErrorToDetails } from '../utils/errors.js';
 
 const registerBody = z.object({
   token: z.string().min(1),
@@ -14,13 +16,37 @@ const registerBody = z.object({
   playerAccountId: z.string().min(1).optional(),
 });
 
+const tokenParamsSchema = z.object({ token: z.string().min(1) });
+const updateBodySchema = z
+  .object({
+    token: z.string().min(1).optional(),
+    platform: z.enum(['IOS', 'ANDROID']).optional(),
+    playerAccountId: z.string().min(1).nullable().optional(),
+  })
+  .refine(
+    (data) =>
+      data.token !== undefined ||
+      data.platform !== undefined ||
+      Object.prototype.hasOwnProperty.call(data, 'playerAccountId'),
+    {
+      message: 'At least one field must be provided',
+      path: [],
+    },
+  );
+
 // eslint-disable-next-line @typescript-eslint/require-await
 const tokensRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/v1/tokens/:token', async (request, reply) => {
-    const params = z.object({ token: z.string().min(1) }).parse(request.params);
-    const device = await findDeviceByToken(params.token);
+    const parsedParams = tokenParamsSchema.safeParse(request.params);
+    if (!parsedParams.success) {
+      reply.code(400).send(buildValidationError(zodErrorToDetails(parsedParams.error)));
+      return;
+    }
+    const { token } = parsedParams.data;
+
+    const device = await findDeviceByToken(token);
     if (!device) {
-      reply.code(404).send({ error: 'Token not found' });
+      reply.code(404).send(buildErrorResponse('NOT_FOUND', 'Token not found'));
       return;
     }
     const deliveries = await listNotificationsByDevice(device.id);
@@ -30,22 +56,95 @@ const tokensRoutes: FastifyPluginAsync = async (fastify) => {
       token: device.token,
       platform: device.platform,
       playerAccountId: device.playerAccountId,
-      createdAt: device.createdAt,
-      updatedAt: device.updatedAt,
-      deliveries,
+      createdAt: device.createdAt.toISOString(),
+      updatedAt: device.updatedAt.toISOString(),
+      deliveries: deliveries.map((delivery) => ({
+        id: delivery.id,
+        status: delivery.status,
+        errorCode: delivery.errorCode,
+        errorMessage: delivery.errorMessage,
+        deliveredAt: delivery.deliveredAt ? delivery.deliveredAt.toISOString() : null,
+        createdAt: delivery.createdAt.toISOString(),
+        notification: {
+          id: delivery.notification.id,
+          title: delivery.notification.title,
+          body: delivery.notification.body,
+          imageUrl: delivery.notification.imageUrl,
+          customData: delivery.notification.customData,
+          createdAt: delivery.notification.createdAt.toISOString(),
+        },
+      })),
     });
   });
 
   fastify.post('/api/v1/tokens', async (request, reply) => {
-    const body = registerBody.parse(request.body);
+    const parsedBody = registerBody.safeParse(request.body);
+    if (!parsedBody.success) {
+      reply.code(400).send(buildValidationError(zodErrorToDetails(parsedBody.error)));
+      return;
+    }
+    const body = parsedBody.data;
     const device = await upsertDevice(body);
-    reply.code(201).send({ id: device.id });
+    reply.code(201).send({
+      id: device.id,
+      token: device.token,
+      platform: device.platform,
+      playerAccountId: device.playerAccountId,
+      createdAt: device.createdAt.toISOString(),
+      updatedAt: device.updatedAt.toISOString(),
+    });
+  });
+
+  fastify.put('/api/v1/tokens/:token', async (request, reply) => {
+    const parsedParams = tokenParamsSchema.safeParse(request.params);
+    if (!parsedParams.success) {
+      reply.code(400).send(buildValidationError(zodErrorToDetails(parsedParams.error)));
+      return;
+    }
+
+    const parsedBody = updateBodySchema.safeParse(request.body);
+    if (!parsedBody.success) {
+      reply.code(400).send(buildValidationError(zodErrorToDetails(parsedBody.error)));
+      return;
+    }
+
+    const { token } = parsedParams.data;
+    const payload = parsedBody.data;
+
+    try {
+      const updated = await updateDevice(token, payload);
+
+      reply.send({
+        id: updated.id,
+        token: updated.token,
+        platform: updated.platform,
+        playerAccountId: updated.playerAccountId,
+        createdAt: updated.createdAt.toISOString(),
+        updatedAt: updated.updatedAt.toISOString(),
+      });
+    } catch (error) {
+      const maybeError = error as { code?: string; name?: string; message?: string } | undefined;
+      if (maybeError?.code === 'P2025' || maybeError?.name === 'PrismaClientKnownRequestError') {
+        reply.code(404).send(buildErrorResponse('NOT_FOUND', 'Token not found'));
+        return;
+      }
+      if (maybeError?.code === 'P2002') {
+        reply.code(409).send(buildErrorResponse('TOKEN_CONFLICT', 'Device token already exists'));
+        return;
+      }
+      throw error;
+    }
   });
 
   fastify.delete('/api/v1/tokens/:token', async (request, reply) => {
-    const params = z.object({ token: z.string().min(1) }).parse(request.params);
+    const parsedParams = tokenParamsSchema.safeParse(request.params);
+    if (!parsedParams.success) {
+      reply.code(400).send(buildValidationError(zodErrorToDetails(parsedParams.error)));
+      return;
+    }
+    const { token } = parsedParams.data;
     try {
-      await deleteDevice(params.token);
+      await deleteDevice(token);
     } catch (error) {
       const maybeError = error as { code?: string; name?: string } | undefined;
       if (maybeError?.code === 'P2025' || maybeError?.name === 'PrismaClientKnownRequestError') {

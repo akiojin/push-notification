@@ -75,6 +75,47 @@ paths:
         '429':
           $ref: '#/components/responses/TooManyRequests'
 
+    put:
+      summary: Update device token
+      description: Update device platform, player account, or rotate the token value
+      operationId: updateToken
+      tags:
+        - Device Tokens
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Existing device token to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeviceTokenRequest'
+      responses:
+        '200':
+          description: Token updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflicting token value already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
     delete:
       summary: Delete device token
       description: Delete a device token (e.g., on app uninstall)
@@ -188,6 +229,25 @@ components:
           type: string
           description: Optional player account identifier
           example: "player-12345"
+
+    UpdateDeviceTokenRequest:
+      type: object
+      minProperties: 1
+      properties:
+        token:
+          type: string
+          description: New device token to replace the existing one
+          example: "b1c2d3e4f5g6h7i8j9k0l1m2n3o4p5q6r7s8t9u0v1w2x3y4z5a6b7c8d9e0f"
+        platform:
+          type: string
+          enum: [IOS, ANDROID]
+          description: Device platform
+          example: ANDROID
+        playerAccountId:
+          type: string
+          nullable: true
+          description: Associated player account identifier
+          example: "player-67890"
 
     SendNotificationRequest:
       type: object

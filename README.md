@@ -23,10 +23,30 @@
 ### セットアップ
 ```bash
 cd server
-cp .env.example .env            # DATABASE_URL, API_KEY を設定
+cp .env.example .env            # 環境変数テンプレートをコピー
 npm install
+npm run env:check               # 必須環境変数のチェック
 npm run prisma:generate
 ```
+
+`.env` には API キーや配信リトライワーカーの設定を記載します（詳細は `server/.env.example` 参照）。CI では `.env.example` をベースに Secrets で上書きしてください。
+
+### CI Secrets
+
+GitHub Actions の `Server CI` ワークフローでは以下の Secrets を参照して `.env` を生成します。環境に合わせて設定してください。
+
+| Secret 名 | 説明 |
+| --- | --- |
+| `DATABASE_URL` | テスト用 PostgreSQL 接続文字列 (例: `postgresql://postgres:postgres@localhost:5432/push`) |
+| `API_KEY` | API 認証キー |
+| `RATE_LIMIT_MAX` | 任意。設定しない場合は `.env.example` の値を使用 |
+| `RATE_LIMIT_TIME_WINDOW` | 任意。設定しない場合は `.env.example` の値を使用 |
+| `DELIVERY_RETRY_INTERVAL_MS` | 任意。設定しない場合は `.env.example` の値を使用 |
+| `DELIVERY_RETRY_BATCH_SIZE` | 任意。設定しない場合は `.env.example` の値を使用 |
+| `APNS_KEY_ID` / `APNS_TEAM_ID` / `APNS_BUNDLE_ID` / `APNS_PRIVATE_KEY` | APNs 資格情報 (テスト環境で不要なら空のままで可) |
+| `FCM_CREDENTIALS` | FCM サービスアカウント JSON のパス、またはCIでの処理用にBase64化した文字列 |
+
+> Secrets を設定しない場合、`.env.example` に記載されたデフォルト値が使用されます。認証が必要な項目 (`API_KEY` など) は必ず Secrets として登録してください。
 
 ### 実行・テスト
 ```bash
@@ -104,6 +124,15 @@ Unity Test Runner (Edit Mode) でテスト可。Samples タブから **Minimal S
 - [ ] CI/CD パイプライン整備 (Node, Swift, Gradle, Unity, Unreal)
 - [ ] サンプルアプリ/ゲームの追加 (エンドツーエンド検証)
 
+## リント / フォーマット
+- ルートで `pnpm install` を実行すると Husky フックがセットアップされます（`prepare` スクリプト）。
+- Markdown: `pnpm run lint:md`
+- Server(TypeScript): `pnpm run lint:server`
+- iOS(Swift): `pnpm run lint:ios`（SwiftLint 必須）
+- Android(Kotlin): `pnpm run lint:android`（Android SDK が必要）
+- Unity/Unreal(C#): `pnpm run lint:unity`（.NET SDK 8+ が必要）
+- まとめて実行: `pnpm run check:all`
+
 ## CI
 
 GitHub Actions 上で以下のワークフローが自動実行されます:
@@ -115,7 +144,7 @@ GitHub Actions 上で以下のワークフローが自動実行されます:
 | `.github/workflows/ios.yml` | ios-sdk | macOS runner 上で `swift test` |
 | `.github/workflows/unity.yml` | unity-sdk | Unity 2022.3 Edit Mode tests |
 
-## バージョン管理とリリース
+詳細な CI 設定と Secrets については [`docs/CI.md`](docs/CI.md) を参照してください。
 
 本プロジェクトは **develop/main ブランチ戦略** と **semantic-release** による自動バージョン管理を採用しています。
 

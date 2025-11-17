@@ -1,12 +1,26 @@
 import { Prisma } from '@prisma/client';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resetEnvCache } from '../../src/config/env.js';
+
 vi.mock('../../src/lib/device/index.js', () => ({
   upsertDevice: vi.fn(async (input: { token: string; platform: string; playerAccountId?: string }) => ({
     id: 'device-id',
-    ...input,
+    token: input.token,
+    platform: input.platform,
+    playerAccountId: input.playerAccountId ?? null,
     createdAt: new Date('2025-01-01T00:00:00Z'),
     updatedAt: new Date('2025-01-02T00:00:00Z')
+  })),
+  updateDevice: vi.fn(async (_token: string, updates: { token?: string; platform?: string; playerAccountId?: string | null }) => ({
+    id: 'device-id',
+    token: updates.token ?? 'device-token',
+    platform: (updates.platform ?? 'IOS') as 'IOS' | 'ANDROID',
+    playerAccountId: Object.prototype.hasOwnProperty.call(updates, 'playerAccountId')
+      ? updates.playerAccountId ?? null
+      : 'player-1',
+    createdAt: new Date('2025-01-01T00:00:00Z'),
+    updatedAt: new Date('2025-01-02T00:00:01Z')
   })),
   deleteDevice: vi.fn(async () => undefined),
   findDeviceByToken: vi.fn(async (token: string) =>
@@ -49,10 +63,12 @@ import {
   deleteDevice,
   findDeviceByToken,
   listNotificationsByDevice,
+  updateDevice,
   upsertDevice
 } from '../../src/lib/device/index.js';
 
 const mockedUpsert = vi.mocked(upsertDevice);
+const mockedUpdate = vi.mocked(updateDevice);
 const mockedDelete = vi.mocked(deleteDevice);
 const mockedFind = vi.mocked(findDeviceByToken);
 const mockedList = vi.mocked(listNotificationsByDevice);
@@ -66,6 +82,8 @@ describe('tokens routes', () => {
     process.env.API_KEY = 'test-key';
     process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
 
+    resetEnvCache();
+
     const built = await buildServer();
     app = built.app;
   });
@@ -73,10 +91,12 @@ describe('tokens routes', () => {
   afterAll(async () => {
     await app.close();
     process.env = originalEnv;
+    resetEnvCache();
   });
 
   beforeEach(() => {
     mockedUpsert.mockClear();
+    mockedUpdate.mockClear();
     mockedDelete.mockClear();
     mockedFind.mockClear();
     mockedList.mockClear();
@@ -92,10 +112,12 @@ describe('tokens routes', () => {
     });
 
     expect(response.statusCode).toBe(200);
+    expect(response.headers).toHaveProperty('x-request-id');
     const body = response.json();
     expect(body).toHaveProperty('id', 'device-id');
     expect(body).toHaveProperty('deliveries');
     expect(Array.isArray(body.deliveries)).toBe(true);
+    expect(body.deliveries[0]).toHaveProperty('notification');
     expect(mockedFind).toHaveBeenCalledWith('device-token');
     expect(mockedList).toHaveBeenCalledWith('device-id');
   });
@@ -112,7 +134,12 @@ describe('tokens routes', () => {
     });
 
     expect(response.statusCode).toBe(404);
-    expect(response.json()).toEqual({ error: 'Token not found' });
+    expect(response.json()).toEqual({
+      error: {
+        code: 'NOT_FOUND',
+        message: 'Token not found',
+      },
+    });
   });
 
   it('creates or updates a device token', async () => {
@@ -130,7 +157,42 @@ describe('tokens routes', () => {
 
     expect(response.statusCode).toBe(201);
     expect(mockedUpsert).toHaveBeenCalledWith({ token: 'abc', platform: 'IOS' });
-    expect(response.json()).toHaveProperty('id', 'device-id');
+    expect(response.json()).toEqual({
+      id: 'device-id',
+      token: 'abc',
+      platform: 'IOS',
+      playerAccountId: null,
+      createdAt: new Date('2025-01-01T00:00:00Z').toISOString(),
+      updatedAt: new Date('2025-01-02T00:00:00Z').toISOString()
+    });
+  });
+
+  it('updates a device token via PUT', async () => {
+    const response = await app.inject({
+      method: 'PUT',
+      url: '/api/v1/tokens/device-token',
+      headers: {
+        'x-api-key': 'test-key'
+      },
+      payload: {
+        token: 'rotated-token',
+        playerAccountId: null
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mockedUpdate).toHaveBeenCalledWith('device-token', {
+      token: 'rotated-token',
+      playerAccountId: null
+    });
+    expect(response.json()).toEqual({
+      id: 'device-id',
+      token: 'rotated-token',
+      platform: 'IOS',
+      playerAccountId: null,
+      createdAt: new Date('2025-01-01T00:00:00Z').toISOString(),
+      updatedAt: new Date('2025-01-02T00:00:01Z').toISOString()
+    });
   });
 
   it('deletes a device token and ignores missing records', async () => {
@@ -152,5 +214,35 @@ describe('tokens routes', () => {
 
     expect(response.statusCode).toBe(204);
     expect(mockedDelete).toHaveBeenCalledWith('missing');
+  });
+
+  it('returns 401 when API key is missing', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/tokens/device-token'
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or missing API key'
+      }
+    });
+    expect(mockedFind).not.toHaveBeenCalled();
+  });
+
+  it('returns incoming request id in responses', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/tokens/device-token',
+      headers: {
+        'x-api-key': 'test-key',
+        'x-request-id': 'custom-token-request'
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.headers).toHaveProperty('x-request-id', 'custom-token-request');
   });
 });

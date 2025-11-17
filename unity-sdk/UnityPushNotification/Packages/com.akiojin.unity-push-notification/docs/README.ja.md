@@ -22,7 +22,7 @@ Packages/
 "com.akiojin.unity-push-notification": "file:../unity-sdk/UnityPushNotification/Packages/com.akiojin.unity-push-notification"
 ```
 
-3. プロジェクトに `com.unity.nuget.newtonsoft-json` 依存が追加されます
+1. プロジェクトに `com.unity.nuget.newtonsoft-json` 依存が追加されます
 
 ## 初期化方法
 

@@ -299,4 +299,4 @@ curl http://localhost:3000/api/v1/openapi.json
 - **OpenAPI仕様**: [contracts/openapi.yaml](./contracts/openapi.yaml)
 - **データモデル**: [data-model.md](./data-model.md)
 - **実装計画**: [plan.md](./plan.md)
-- **GitHub Issues**: https://github.com/yourorg/push-notification/issues
+- **GitHub Issues**: <https://github.com/yourorg/push-notification/issues>

@@ -18,6 +18,20 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
-      - name: Build and test Swift package
+      - name: Select available simulator
+        id: find_sim
+        run: |
+          SIM_ID=$(xcrun simctl list devices available | grep -E "iPhone 1[6-7]" | head -n1 | sed -E 's/.*\(([-A-F0-9]+)\).*/\1/')
+          if [ -z "$SIM_ID" ]; then
+            echo "No suitable iPhone simulator found" >&2
+            exit 1
+          fi
+          echo "sim_id=$SIM_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test Swift package (iOS Simulator)
         working-directory: ios-sdk
-        run: swift test --enable-code-coverage
+        run: |
+          xcodebuild \
+            -scheme PushNotificationSDK \
+            -destination "id=${{ steps.find_sim.outputs.sim_id }}" \
+            test

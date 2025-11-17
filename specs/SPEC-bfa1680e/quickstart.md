@@ -30,9 +30,9 @@ MyProject/
 └── ...
 ```
 
-2. Unreal Editorを起動し、Edit > Plugins > Installed > Messagingから`Push Notification Plugin`を有効化
+1. Unreal Editorを起動し、Edit > Plugins > Installed > Messagingから`Push Notification Plugin`を有効化
 
-3. Editorを再起動
+2. Editorを再起動
 
 ### 1.2 Build.csに依存関係を追加（C++プロジェクトのみ）
 
