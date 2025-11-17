@@ -5,7 +5,7 @@ let package = Package(
     name: "PushNotificationSDK",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v13)
+        .iOS(.v12)
     ],
     products: [
         .library(
