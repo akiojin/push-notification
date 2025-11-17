@@ -1,6 +1,7 @@
 import Foundation
 import UserNotifications
 
+@available(macOS 10.14, *)
 final class NotificationProcessor {
     private var pendingResponse: UNNotificationResponse?
     private let lock = NSLock()

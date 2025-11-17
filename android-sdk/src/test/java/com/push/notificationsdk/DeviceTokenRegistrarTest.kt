@@ -1,15 +1,17 @@
 package com.push.notificationsdk
 
 import com.push.notificationsdk.network.DeviceTokenRegistrar
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
-import okhttp3.Call
+import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.runBlocking
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
-import okhttp3.ResponseBody
-import kotlinx.coroutines.runBlocking
+import okhttp3.ResponseBody.Companion.toResponseBody
+import okio.Buffer
+import org.json.JSONObject
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -26,22 +28,45 @@ class DeviceTokenRegistrarTest {
 
     @Test
     fun `successful registration performs network call`() {
-        val call = mockk<Call>()
-        val client = mockk<OkHttpClient>()
+        val capturedRequest = AtomicReference<Request?>()
+        val capturedBody = AtomicReference<String?>()
+
+        val client = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request()
+                capturedRequest.set(request)
+
+                val bodyText = request.body?.let { body ->
+                    val buffer = Buffer()
+                    body.writeTo(buffer)
+                    buffer.readUtf8()
+                }
+                capturedBody.set(bodyText)
+
+                Response.Builder()
+                    .request(request)
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("OK")
+                    .body("{}".toResponseBody("application/json".toMediaType()))
+                    .build()
+            }
+            .build()
+
         val registrar = DeviceTokenRegistrar(client)
         registrar.configure(apiKey = "key", backendUrl = "https://example.com")
-
-        val response = mockk<Response>()
-        every { response.isSuccessful } returns true
-        every { response.close() } returns Unit
-        every { call.execute() } returns response
-        every { client.newCall(any<Request>()) } returns call
 
         runBlocking {
             registrar.registerToken("token")
         }
 
-        verify { client.newCall(any<Request>()) }
-        verify { call.execute() }
+        val request = capturedRequest.get() ?: error("Request not captured")
+        assertEquals("https://example.com/api/v1/tokens", request.url.toString())
+        assertEquals("key", request.header("x-api-key"))
+
+        val bodyJson = capturedBody.get() ?: error("Request body missing")
+        val body = JSONObject(bodyJson)
+        assertEquals("token", body.getString("token"))
+        assertEquals("ANDROID", body.getString("platform"))
     }
 }

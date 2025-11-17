@@ -5,9 +5,10 @@ services:
     volumes:
       - .:/push-notification
       - bash-history:/root/.bash_history_dir
+      - ./.docker/bash_history:/root/.bash_history
       - claude-config:/root/.claude
       - codex-config:/root/.codex
-      - ~/.codex/auth.json:/root/.codex/auth.json
+      - ${HOME:-~}/.codex:/root/.codex-host:ro
       - ~/.serena:/root/.serena
     environment:
       - NPM_USER
@@ -17,13 +18,12 @@ services:
       - GITHUB_PERSONAL_ACCESS_TOKEN
       - GITHUB_USERNAME
       - GIT_USER_EMAIL
-      - UNITY_HOST=host.docker.internal
-      - UNITY_PORT=6400
-      # bash_history
+      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+      - ANDROID_HOME=/opt/android-sdk
       - HISTFILE=/root/.bash_history_dir/.bash_history
       - HISTSIZE=5000
       - HISTFILESIZE=200000
-      # Claude Code
       - MAX_MCP_OUTPUT_TOKENS
       - ENABLE_BACKGROUND_TASKS=1
       - FORCE_AUTO_BACKGROUND_TASKS=1

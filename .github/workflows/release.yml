@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
+        run: npx semantic-release
+
+      - name: Sync develop branch
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Syncing develop branch with main..."
+          git fetch origin main:main
+          git fetch origin develop:develop || git checkout -b develop main
+
+          # Try to merge main into develop
+          git checkout develop
+          if git merge main --no-edit; then
+            git push origin develop
+            echo "✓ develop branch synced successfully"
+          else
+            echo "⚠️  Merge conflict detected. Creating PR to sync develop..."
+            git merge --abort
+
+            # Create a sync branch
+            SYNC_BRANCH="sync/main-to-develop-$(date +%s)"
+            git checkout -b "$SYNC_BRANCH" main
+            git push origin "$SYNC_BRANCH"
+
+            # Create PR
+            gh pr create \
+              --base develop \
+              --head "$SYNC_BRANCH" \
+              --title "Sync main → develop after release" \
+              --body "Automatic sync of main branch changes to develop after release.
+
+This PR was created because automatic merge failed due to conflicts.
+Please resolve conflicts manually and merge." || echo "PR creation failed or already exists"
+          fi

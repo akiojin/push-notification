@@ -117,7 +117,7 @@
    - featureブランチをリモートにpush
    - GitHub PRを自動作成（spec.mdからタイトル取得）
    - GitHub ActionsでRequiredチェックを監視し、自動マージ可否を判定
-   - Requiredチェックがすべて成功した場合のみ自動的にmainへマージ（`--no-ff`で履歴保持）
+   - Requiredチェックがすべて成功した場合のみ自動的にdevelopへマージ（`--no-ff`で履歴保持）
 
 **既存SPEC移行**:
 
@@ -193,7 +193,7 @@ cd .worktrees/SPEC-0d5d84f9/
 4. タスク実行（TDDサイクル厳守）
    - Worktree内で独立して作業
    - 各変更をfeatureブランチにコミット
-5. 完了後、`finish-feature.sh`でmainにマージ＆Worktree削除
+5. 完了後、`finish-feature.sh`でdevelopにマージ＆Worktree削除
 
 **既存機能のSpec化フロー**:
 
@@ -201,7 +201,7 @@ cd .worktrees/SPEC-0d5d84f9/
 2. `/speckit.specify` - 実装済み機能のビジネス要件を文書化
 3. `/speckit.plan` - （必要に応じて）技術設計を追記
 4. 既存実装とSpecの整合性確認
-5. 完了後、`finish-feature.sh`でmainにマージ
+5. 完了後、`finish-feature.sh`でdevelopにマージ
 
 **Spec作成原則**:
 
@@ -225,15 +225,84 @@ cd .worktrees/SPEC-0d5d84f9/
 
 ## バージョン管理
 
-### npm versionコマンドの使用
+### develop/main + semantic-release
 
-バージョンアップは必ず`npm version`コマンドを使用する：
+本プロジェクトは**develop/mainブランチ戦略**と**semantic-release**による自動バージョン管理を採用しています。
 
-- **パッチバージョン**: `npm version patch` (例: 2.9.0 → 2.9.1)
-- **マイナーバージョン**: `npm version minor` (例: 2.9.0 → 2.10.0)
-- **メジャーバージョン**: `npm version major` (例: 2.9.0 → 3.0.0)
+#### ブランチ戦略
 
-**重要**: package.jsonを直接編集してのバージョン変更は禁止
+```
+feature/SPEC-xxx → develop → main
+                               ↓
+                          semantic-release
+                          (バージョン決定、タグ作成、CHANGELOG更新)
+```
+
+**主要ブランチ**:
+
+- **main**: 本番環境相当、リリース済みコード
+- **develop**: 開発中の最新コード
+- **feature/SPEC-xxx**: 機能開発ブランチ（Worktree運用）
+
+#### リリースフロー
+
+**1. 機能開発（feature → develop）**:
+
+```bash
+# SPECワークフロー内で実行
+.specify/scripts/bash/finish-feature.sh
+# → featureブランチをdevelopへ自動マージ
+```
+
+**2. リリース作成（develop → main）**:
+
+```bash
+# /release コマンド実行
+/release
+# または直接スクリプト実行
+.specify/scripts/bash/create-release.sh
+
+# 実行内容:
+# 1. developからmainへPR作成
+# 2. CIチェック実行
+# 3. チェック成功後、mainへ自動マージ
+```
+
+**3. バージョンタグ作成（main）**:
+
+```bash
+# mainへのマージ時、GitHub Actionsで自動実行
+# 1. semantic-releaseがConventional Commitsからバージョン決定
+# 2. package.json更新
+# 3. CHANGELOG.md更新
+# 4. 上記変更をmainに直接コミット
+# 5. Gitタグ作成（例: v1.2.0）
+# 6. GitHub Release作成
+# 7. developへ変更を自動バックマージ
+```
+
+#### バージョン決定ルール（Conventional Commits）
+
+semantic-releaseは**Conventional Commits**形式のコミットメッセージからバージョンを自動決定します：
+
+| コミットタイプ | バージョン | 例 |
+|--------------|----------|-----|
+| `feat:` | MINOR (0.x.0) | `feat: 新機能追加` |
+| `fix:` | PATCH (0.0.x) | `fix: バグ修正` |
+| `BREAKING CHANGE:` | MAJOR (x.0.0) | `feat!: 破壊的変更` |
+| `perf:`, `refactor:` | PATCH (0.0.x) | `perf: パフォーマンス改善` |
+| `docs:`, `chore:`, `ci:`, `test:` | リリースなし | `docs: README更新` |
+
+**commitlint**でコミットメッセージを自動検証します。
+
+#### 手動バージョン変更の禁止
+
+**重要**: package.jsonを直接編集してのバージョン変更は禁止です。すべてのバージョン管理はsemantic-releaseで自動化されています。
+
+#### コマンド一覧
+
+- `/release`: developからmainへPR作成
+- `finish-feature.sh`: featureブランチをdevelopへマージ
 
 ## コードクオリティガイドライン
 
